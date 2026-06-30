@@ -148,12 +148,17 @@
         .charts {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 22px;
         }
 
         canvas {
             width: 100% !important;
-            max-height: 320px;
+            height: 380px !important;
+            max-height: 420px;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
         }
 
         @media (min-width: 780px) {
@@ -312,7 +317,51 @@ function renderResults(data) {
 }
 
 function drawCharts(baseline, rate, sigma) {
-    const labels = ["", "Initial Capability", "Final Capability", ""];
+    const labels = ["Baseline", "Current"];
+    const sharedOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#1f2933",
+                    font: { size: 14, weight: "700" },
+                    usePointStyle: true,
+                    pointStyle: "circle",
+                    padding: 18
+                }
+            },
+            tooltip: {
+                backgroundColor: "#1f2933",
+                titleFont: { size: 14, weight: "700" },
+                bodyFont: { size: 14 },
+                padding: 12
+            }
+        },
+        scales: {
+            x: {
+                offset: true,
+                grid: { display: false },
+                ticks: {
+                    color: "#1f2933",
+                    font: { size: 13, weight: "700" }
+                }
+            },
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: "#d9e2ec",
+                    lineWidth: 1.2
+                },
+                border: { color: "#9fb3c8" },
+                ticks: {
+                    color: "#334e68",
+                    font: { size: 12, weight: "700" },
+                    padding: 8
+                }
+            }
+        }
+    };
 
     if (zChart) zChart.destroy();
     zChart = new Chart(document.getElementById("zChart"), {
@@ -322,26 +371,41 @@ function drawCharts(baseline, rate, sigma) {
             datasets: [
                 {
                     label: "Z.ST",
-                    data: [null, baseline.sigma, sigma, null],
-                    showLine: false,
+                    data: [baseline.sigma, sigma],
+                    tension: 0.25,
+                    fill: false,
                     borderColor: "#1f77b4",
                     backgroundColor: "#1f77b4",
-                    pointRadius: 6
+                    borderWidth: 4,
+                    pointRadius: 8,
+                    pointHoverRadius: 10
                 },
                 {
                     label: "Goal (2.8)",
-                    data: [2.8, 2.8, 2.8, 2.8],
+                    data: [2.8, 2.8],
                     borderColor: "#c62828",
-                    borderWidth: 2,
+                    backgroundColor: "#c62828",
+                    borderWidth: 3,
                     borderDash: [6, 4],
-                    pointRadius: 0
+                    pointRadius: 0,
+                    pointHoverRadius: 0
                 }
             ]
         },
         options: {
-            responsive: true,
+            ...sharedOptions,
             scales: {
-                x: { offset: true, grid: { display: false } }
+                ...sharedOptions.scales,
+                y: {
+                    ...sharedOptions.scales.y,
+                    suggestedMax: 3.5,
+                    title: {
+                        display: true,
+                        text: "Sigma Level",
+                        color: "#1f2933",
+                        font: { size: 13, weight: "700" }
+                    }
+                }
             }
         }
     });
@@ -354,26 +418,45 @@ function drawCharts(baseline, rate, sigma) {
             datasets: [
                 {
                     label: "% Defective",
-                    data: [null, baseline.defect_rate, rate, null],
-                    showLine: false,
+                    data: [baseline.defect_rate, rate],
+                    tension: 0.25,
+                    fill: false,
                     borderColor: "#5f4b8b",
                     backgroundColor: "#5f4b8b",
-                    pointRadius: 6
+                    borderWidth: 4,
+                    pointRadius: 8,
+                    pointHoverRadius: 10
                 },
                 {
                     label: "Goal (10%)",
-                    data: [10, 10, 10, 10],
+                    data: [10, 10],
                     borderColor: "#c62828",
-                    borderWidth: 2,
+                    backgroundColor: "#c62828",
+                    borderWidth: 3,
                     borderDash: [6, 4],
-                    pointRadius: 0
+                    pointRadius: 0,
+                    pointHoverRadius: 0
                 }
             ]
         },
         options: {
-            responsive: true,
+            ...sharedOptions,
             scales: {
-                x: { offset: true, grid: { display: false } }
+                ...sharedOptions.scales,
+                y: {
+                    ...sharedOptions.scales.y,
+                    suggestedMax: Math.max(45, rate + 10),
+                    ticks: {
+                        ...sharedOptions.scales.y.ticks,
+                        callback: value => value + "%"
+                    },
+                    title: {
+                        display: true,
+                        text: "Defective Rate",
+                        color: "#1f2933",
+                        font: { size: 13, weight: "700" }
+                    }
+                }
             }
         }
     });
