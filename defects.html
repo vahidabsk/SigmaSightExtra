@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defective PSNs Map</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 20px;
+            background: #f4f6f8;
+            color: #1f2933;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        #map-container svg {
+            width: 100%;
+            height: 500px;
+            background: white;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+        }
+
+        path {
+            fill: #eeeeee;
+            stroke: #999;
+            stroke-width: 1;
+        }
+
+        .side-panel {
+            width: 300px;
+            background: white;
+            padding: 15px;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+            overflow-y: auto;
+        }
+
+        .company-item {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #cc0000;
+        }
+
+        .count {
+            color: #cc0000;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        th {
+            background: #cc0000;
+            color: white;
+        }
+
+        .empty {
+            padding: 14px;
+            background: white;
+            border: 1px solid #d9e2ec;
+            border-radius: 8px;
+            color: #627386;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 760px) {
+            body { padding: 14px; }
+            .container { display: block; }
+            .side-panel {
+                width: 100%;
+                margin-top: 16px;
+            }
+            #map-container svg { height: auto; }
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Defective PSNs (US Map)</h2>
+<div id="emptyState" class="empty" style="display:none;">
+    No defect data is loaded yet. Analyze an Excel file from the dashboard first, then open this map.
+</div>
+
+<div class="container">
+
+    <!-- ✅ MAP -->
+    <div style="flex:1;">
+        <div id="map-container"></div>
+    </div>
+
+    <!-- ✅ TOP COMPANIES -->
+    <div class="side-panel">
+        <h3>Top 10 Companies</h3>
+        <div id="companyList"></div>
+    </div>
+
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>State</th>
+            <th>PSNs</th>
+        </tr>
+    </thead>
+    <tbody id="table"></tbody>
+</table>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+
+async function load() {
+
+    // ✅ LOAD SVG
+    const svgRes = await fetch("/static/us.svg");
+    const svgText = await svgRes.text();
+    document.getElementById("map-container").innerHTML = svgText;
+
+    const svg = document.querySelector("#map-container svg");
+    const table = document.getElementById("table");
+
+    // ✅ DATA
+    const res = await fetch("/defects-data");
+    const data = await res.json();
+
+    const companyRes = await fetch("/top-companies");
+    const companies = await companyRes.json();
+
+    const companyList = document.getElementById("companyList");
+
+    // ✅ RENDER TOP COMPANIES
+    companyList.innerHTML = "";
+    companies.forEach((item, index) => {
+
+        const name = item[0];
+        const count = item[1];
+
+        companyList.innerHTML += `
+        <div class="company-item">
+            <div class="rank">${index + 1}. ${name}</div>
+            <div class="count">${count} defective PSNs</div>
+        </div>
+        `;
+    });
+
+    // ✅ STATE MAP
+    const stateToAbbrev = {
+        "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR",
+        "California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE",
+        "Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID",
+        "Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS",
+        "Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD",
+        "Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+        "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV",
+        "New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY",
+        "North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
+        "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC",
+        "South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT",
+        "Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV",
+        "Wisconsin":"WI","Wyoming":"WY"
+    };
+
+    Object.values(stateToAbbrev).forEach(abbrev => {
+        stateToAbbrev[abbrev] = abbrev;
+    });
+
+    // ✅ DYNAMIC COLOR SCALE
+    const counts = Object.values(data).map(v => v.length);
+    const emptyState = document.getElementById("emptyState");
+
+    if (!counts.length) {
+        emptyState.style.display = "block";
+        return;
+    }
+
+    emptyState.style.display = "none";
+
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+
+    function getColor(count) {
+
+        if (max === min) return "rgb(255,200,200)";
+
+        const ratio = (count - min) / (max - min);
+
+        const red = 255;
+        const green = Math.floor(200 * (1 - ratio));
+        const blue = Math.floor(200 * (1 - ratio));
+
+        return `rgb(${red}, ${green}, ${blue})`;
+    }
+
+    // ✅ LOOP STATES
+    for (const state in data) {
+
+        const cleanState = state.trim();
+        const psns = data[state];
+        const count = psns.length;
+
+        table.innerHTML += `
+        <tr>
+            <td>${cleanState}</td>
+            <td>${psns.join(", ")}</td>
+        </tr>`;
+
+        const abbrev = stateToAbbrev[cleanState];
+
+        if (!abbrev) continue;
+
+        const stateElement = document.getElementById(abbrev);
+
+        if (stateElement) {
+
+            // ✅ COLOR
+            stateElement.style.fill = getColor(count);
+
+            // ✅ LABEL
+            const bbox = stateElement.getBBox();
+
+            const x = bbox.x + bbox.width / 2;
+            const y = bbox.y + bbox.height / 2;
+
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+
+            label.setAttribute("x", x);
+            label.setAttribute("y", y);
+            label.setAttribute("font-size", "14");
+            label.setAttribute("font-weight", "900");
+            label.setAttribute("text-anchor", "middle");
+            label.setAttribute("dominant-baseline", "middle");
+
+            label.setAttribute("stroke", "white");
+            label.setAttribute("stroke-width", "2");
+            label.setAttribute("paint-order", "stroke");
+
+            label.setAttribute("fill", count > (min + max)/2 ? "white" : "black");
+
+            label.textContent = abbrev;
+
+            svg.appendChild(label);
+        }
+    }
+}
+
+load();
+
+});
+
+</script>
+
+</body>
+</html>

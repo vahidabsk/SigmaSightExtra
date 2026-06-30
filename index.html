@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SigmaSight Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --accent: #c62828;
+            --accent-dark: #8f1d1d;
+            --ink: #1f2933;
+            --muted: #627386;
+            --line: #d9e2ec;
+            --panel: #ffffff;
+            --page: #f4f6f8;
+            --good: #0f8a5f;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--page);
+            color: var(--ink);
+        }
+
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 22px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0 0 4px;
+            color: var(--accent);
+            font-size: 30px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .upload-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="file"] {
+            max-width: 100%;
+        }
+
+        button {
+            border: 0;
+            border-radius: 6px;
+            padding: 9px 13px;
+            background: var(--accent);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button.secondary {
+            background: #334e68;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .status {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .status.error {
+            color: var(--accent-dark);
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+            gap: 10px;
+        }
+
+        .kpi {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 92px;
+            background: #fbfdff;
+        }
+
+        .kpi h3 {
+            margin: 0 0 7px;
+            color: var(--accent);
+            font-size: 24px;
+            line-height: 1.1;
+        }
+
+        .kpi p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .improvement {
+            display: none;
+            background: var(--good);
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        canvas {
+            width: 100% !important;
+            max-height: 320px;
+        }
+
+        @media (min-width: 780px) {
+            .charts { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 620px) {
+            header { display: block; }
+            main { padding: 14px; }
+            h1 { font-size: 26px; }
+            button { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <header>
+        <div>
+            <h1>SigmaSight Dashboard</h1>
+            <div class="subtitle">Created by Vahid Abbasi for Green Belt Project, Control Phase</div>
+        </div>
+    </header>
+
+    <section class="panel">
+        <div class="upload-row">
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <button id="analyzeButton" onclick="upload()">Analyze</button>
+            <button class="secondary" onclick="openDefects()">View Defective PSNs Map</button>
+        </div>
+        <div id="status" class="status">Upload the Excel file to calculate the current performance.</div>
+    </section>
+
+    <section class="panel">
+        <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
+        <div class="kpi-grid">
+            <div class="kpi"><h3>1,630</h3><p>Total Units</p></div>
+            <div class="kpi"><h3>564</h3><p>Defective Units</p></div>
+            <div class="kpi"><h3>1,692</h3><p>Total Defects</p></div>
+            <div class="kpi"><h3>34.60%</h3><p>% Defective</p></div>
+            <div class="kpi"><h3>346,012</h3><p>DPMO</p></div>
+            <div class="kpi"><h3>1.90</h3><p>Sigma</p></div>
+        </div>
+    </section>
+
+    <section id="current" class="panel" style="display:none;">
+        <div class="section-title" id="analysisTitle"></div>
+        <div class="kpi-grid">
+            <div class="kpi"><h3 id="units"></h3><p>Total Units</p></div>
+            <div class="kpi"><h3 id="defUnits"></h3><p>Defective Units</p></div>
+            <div class="kpi"><h3 id="defects"></h3><p>Total Defects</p></div>
+            <div class="kpi"><h3 id="rate"></h3><p>% Defective</p></div>
+            <div class="kpi"><h3 id="dpmo"></h3><p>DPMO</p></div>
+            <div class="kpi"><h3 id="sigma"></h3><p>Sigma</p></div>
+        </div>
+    </section>
+
+    <div id="improve" class="improvement"></div>
+
+    <section id="charts" class="panel" style="display:none;">
+        <div class="charts">
+            <canvas id="zChart"></canvas>
+            <canvas id="defChart"></canvas>
+        </div>
+    </section>
+</main>
+
+<script>
+let zChart;
+let defChart;
+
+function openDefects() {
+    window.open("/defects", "_blank");
+}
+
+function setStatus(message, isError = false) {
+    const status = document.getElementById("status");
+    status.innerText = message;
+    status.className = isError ? "status error" : "status";
+}
+
+function formatNumber(value) {
+    return Number(value || 0).toLocaleString();
+}
+
+function formatSigma(value) {
+    return value === null || value === undefined ? "N/A" : Number(value).toFixed(2);
+}
+
+async function upload() {
+    const file = document.getElementById("fileInput").files[0];
+    const button = document.getElementById("analyzeButton");
+
+    if (!file) {
+        setStatus("Please select an Excel file first.", true);
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    button.disabled = true;
+    setStatus("Analyzing file...");
+
+    try {
+        const res = await fetch("/upload", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || "The file could not be analyzed.");
+        }
+
+        renderResults(data);
+        setStatus("Analysis complete.");
+    } catch (error) {
+        setStatus(error.message, true);
+    } finally {
+        button.disabled = false;
+    }
+}
+
+function renderResults(data) {
+    const baseline = data.baseline;
+    const rate = Number(data.defect_rate || 0);
+    const currentDefects = Number(data.total_defects || 0);
+    const sigma = data.sigma;
+
+    document.getElementById("units").innerText = formatNumber(data.total);
+    document.getElementById("defUnits").innerText = formatNumber(data.defective_units);
+    document.getElementById("defects").innerText = formatNumber(currentDefects);
+    document.getElementById("rate").innerText = rate.toFixed(2) + "%";
+    document.getElementById("dpmo").innerText = formatNumber(Math.round(data.dpmo));
+    document.getElementById("sigma").innerText = formatSigma(sigma);
+
+    const reduction = baseline.total_defects
+        ? ((baseline.total_defects - currentDefects) / baseline.total_defects) * 100
+        : 0;
+    const improvement = baseline.defect_rate - rate;
+
+    document.getElementById("improve").innerText =
+        `${improvement.toFixed(1)}% point improvement | ${reduction.toFixed(1)}% defect reduction`;
+
+    const today = new Date().toLocaleDateString();
+    document.getElementById("analysisTitle").innerText =
+        "Metric Facts (Analyzed - " + today + ")";
+
+    document.getElementById("current").style.display = "block";
+    document.getElementById("charts").style.display = "block";
+    document.getElementById("improve").style.display = "block";
+
+    drawCharts(baseline, rate, sigma);
+}
+
+function drawCharts(baseline, rate, sigma) {
+    const labels = ["", "Initial Capability", "Final Capability", ""];
+
+    if (zChart) zChart.destroy();
+    zChart = new Chart(document.getElementById("zChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Z.ST",
+                    data: [null, baseline.sigma, sigma, null],
+                    showLine: false,
+                    borderColor: "#1f77b4",
+                    backgroundColor: "#1f77b4",
+                    pointRadius: 6
+                },
+                {
+                    label: "Goal (2.8)",
+                    data: [2.8, 2.8, 2.8, 2.8],
+                    borderColor: "#c62828",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { offset: true, grid: { display: false } }
+            }
+        }
+    });
+
+    if (defChart) defChart.destroy();
+    defChart = new Chart(document.getElementById("defChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "% Defective",
+                    data: [null, baseline.defect_rate, rate, null],
+                    showLine: false,
+                    borderColor: "#5f4b8b",
+                    backgroundColor: "#5f4b8b",
+                    pointRadius: 6
+                },
+                {
+                    label: "Goal (10%)",
+                    data: [10, 10, 10, 10],
+                    borderColor: "#c62828",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { offset: true, grid: { display: false } }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
