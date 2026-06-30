@@ -16,6 +16,7 @@ REQUIRED_COLUMNS = 9
 
 COL_PSN = 0
 COL_COMPANY = 1
+COL_CITY = 3
 COL_STATE = 4
 COL_COUNTRY = 5
 COL_CONTACTS = 8
@@ -34,6 +35,7 @@ BASELINE = {
 app.mount("/static", StaticFiles(directory=BASE_DIR), name="static")
 
 latest_state_map = {}
+latest_state_details = {}
 latest_companies = []
 
 
@@ -122,6 +124,13 @@ def clean_state(value):
     return text
 
 
+def clean_text(value, fallback="Unknown"):
+    text = str(value).strip()
+    if not text or text.lower() in {"nan", "none", "n/a", "na"}:
+        return fallback
+    return text
+
+
 def erfinv(y):
     a = 0.147
     sign = 1 if y >= 0 else -1
@@ -135,7 +144,7 @@ def erfinv(y):
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
 
-    global latest_state_map, latest_companies
+    global latest_state_map, latest_state_details, latest_companies
 
     try:
         df = pd.read_excel(file.file, header=None)
@@ -152,6 +161,7 @@ async def upload(file: UploadFile = File(...)):
     defective_units = 0
 
     state_map = defaultdict(list)
+    state_details = defaultdict(list)
     company_map = defaultdict(int)
 
     for _, row in df.iloc[1:].iterrows():
@@ -168,6 +178,8 @@ async def upload(file: UploadFile = File(...)):
 
         raw_company = row[COL_COMPANY]
         company = normalize_company(raw_company)
+        asc_name = clean_text(raw_company)
+        city = clean_text(row[COL_CITY])
 
         blob = row[COL_CONTACTS]
 
@@ -184,9 +196,16 @@ async def upload(file: UploadFile = File(...)):
         if is_defect:
             defective_units += 1
             state_map[state].append(psn)
+            state_details[state].append({
+                "psn": clean_text(psn),
+                "asc_name": asc_name,
+                "city": city,
+                "state": state,
+            })
             company_map[company] += 1
 
     latest_state_map = dict(state_map)
+    latest_state_details = dict(state_details)
 
     latest_companies = sorted(company_map.items(), key=lambda x: x[1], reverse=True)[:10]
 
@@ -229,6 +248,11 @@ async def upload(file: UploadFile = File(...)):
 @app.get("/defects-data")
 def defects_data():
     return latest_state_map
+
+
+@app.get("/defects-details")
+def defects_details():
+    return latest_state_details
 
 
 @app.get("/top-companies")
