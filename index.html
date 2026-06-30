@@ -355,7 +355,11 @@ function renderResults(data) {
     document.getElementById("improve").innerText =
         `${improvement.toFixed(1)}% point improvement | ${reduction.toFixed(1)}% defect reduction`;
 
-    const today = new Date().toLocaleDateString();
+    const today = new Date().toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+    });
     document.getElementById("analysisTitle").innerText =
         "Metric Facts (Analyzed - " + today + ")";
 
@@ -415,18 +419,22 @@ function drawCharts(baseline, rate, sigma) {
 
     if (zChart) zChart.destroy();
     zChart = new Chart(document.getElementById("zChart"), {
-        type: "bar",
+        type: "line",
         data: {
             labels: labels,
             datasets: [
                 {
                     label: "Z.ST",
                     data: [baseline.sigma, sigma],
+                    showLine: false,
                     borderColor: "#0f766e",
-                    backgroundColor: ["rgba(15, 118, 110, 0.42)", "rgba(15, 118, 110, 0.9)"],
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    maxBarThickness: 88
+                    backgroundColor: "#0f766e",
+                    pointBackgroundColor: ["rgba(15, 118, 110, 0.52)", "#0f766e"],
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 4,
+                    pointRadius: 12,
+                    pointHoverRadius: 14,
+                    pointStyle: "circle"
                 },
                 {
                     type: "line",
@@ -462,18 +470,22 @@ function drawCharts(baseline, rate, sigma) {
 
     if (defChart) defChart.destroy();
     defChart = new Chart(document.getElementById("defChart"), {
-        type: "bar",
+        type: "line",
         data: {
             labels: labels,
             datasets: [
                 {
                     label: "% Defective",
                     data: [baseline.defect_rate, rate],
+                    showLine: false,
                     borderColor: "#7c3aed",
-                    backgroundColor: ["rgba(124, 58, 237, 0.38)", "rgba(124, 58, 237, 0.88)"],
-                    borderWidth: 2,
-                    borderRadius: 8,
-                    maxBarThickness: 88
+                    backgroundColor: "#7c3aed",
+                    pointBackgroundColor: ["rgba(124, 58, 237, 0.5)", "#7c3aed"],
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 4,
+                    pointRadius: 12,
+                    pointHoverRadius: 14,
+                    pointStyle: "circle"
                 },
                 {
                     type: "line",
