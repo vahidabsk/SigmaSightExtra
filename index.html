@@ -8,14 +8,18 @@
 
     <style>
         :root {
-            --accent: #c62828;
-            --accent-dark: #8f1d1d;
-            --ink: #1f2933;
-            --muted: #627386;
-            --line: #d9e2ec;
+            --accent: #0f766e;
+            --accent-dark: #134e4a;
+            --ink: #172033;
+            --muted: #64748b;
+            --line: #d7dee8;
             --panel: #ffffff;
-            --page: #f4f6f8;
-            --good: #0f8a5f;
+            --page: #eef4f7;
+            --good: #2563eb;
+            --secondary: #334155;
+            --sigma: #0f766e;
+            --defective: #7c3aed;
+            --goal: #f97316;
         }
 
         * { box-sizing: border-box; }
@@ -23,7 +27,9 @@
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
-            background: var(--page);
+            background:
+                linear-gradient(180deg, #dff7f2 0, var(--page) 260px),
+                var(--page);
             color: var(--ink);
         }
 
@@ -58,7 +64,7 @@
             border-radius: 8px;
             padding: 16px;
             margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
         }
 
         .upload-row {
@@ -83,7 +89,7 @@
         }
 
         button.secondary {
-            background: #334e68;
+            background: var(--secondary);
         }
 
         button:disabled {
@@ -118,7 +124,7 @@
             border-radius: 8px;
             padding: 12px;
             min-height: 92px;
-            background: #fbfdff;
+            background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
         }
 
         .kpi h3 {
@@ -151,14 +157,42 @@
             gap: 22px;
         }
 
-        canvas {
-            width: 100% !important;
-            height: 380px !important;
-            max-height: 420px;
-            background: #ffffff;
+        .chart-card {
+            background: #fbfefd;
             border: 1px solid var(--line);
             border-radius: 8px;
-            padding: 12px;
+            padding: 16px;
+            min-height: 430px;
+        }
+
+        .chart-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .chart-heading h3 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--ink);
+        }
+
+        .chart-heading span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .chart-frame {
+            height: 350px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
         }
 
         @media (min-width: 780px) {
@@ -220,8 +254,24 @@
 
     <section id="charts" class="panel" style="display:none;">
         <div class="charts">
-            <canvas id="zChart"></canvas>
-            <canvas id="defChart"></canvas>
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Sigma Capability</h3>
+                    <span>Goal: 2.8</span>
+                </div>
+                <div class="chart-frame">
+                    <canvas id="zChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Defective Rate</h3>
+                    <span>Goal: 10%</span>
+                </div>
+                <div class="chart-frame">
+                    <canvas id="defChart"></canvas>
+                </div>
+            </div>
         </div>
     </section>
 </main>
@@ -324,15 +374,15 @@ function drawCharts(baseline, rate, sigma) {
         plugins: {
             legend: {
                 labels: {
-                    color: "#1f2933",
-                    font: { size: 14, weight: "700" },
+                    color: "#172033",
+                    font: { size: 13, weight: "700" },
                     usePointStyle: true,
                     pointStyle: "circle",
                     padding: 18
                 }
             },
             tooltip: {
-                backgroundColor: "#1f2933",
+                backgroundColor: "#172033",
                 titleFont: { size: 14, weight: "700" },
                 bodyFont: { size: 14 },
                 padding: 12
@@ -343,7 +393,7 @@ function drawCharts(baseline, rate, sigma) {
                 offset: true,
                 grid: { display: false },
                 ticks: {
-                    color: "#1f2933",
+                    color: "#172033",
                     font: { size: 13, weight: "700" }
                 }
             },
@@ -355,7 +405,7 @@ function drawCharts(baseline, rate, sigma) {
                 },
                 border: { color: "#9fb3c8" },
                 ticks: {
-                    color: "#334e68",
+                    color: "#475569",
                     font: { size: 12, weight: "700" },
                     padding: 8
                 }
@@ -365,30 +415,30 @@ function drawCharts(baseline, rate, sigma) {
 
     if (zChart) zChart.destroy();
     zChart = new Chart(document.getElementById("zChart"), {
-        type: "line",
+        type: "bar",
         data: {
             labels: labels,
             datasets: [
                 {
                     label: "Z.ST",
                     data: [baseline.sigma, sigma],
-                    tension: 0.25,
-                    fill: false,
-                    borderColor: "#1f77b4",
-                    backgroundColor: "#1f77b4",
-                    borderWidth: 4,
-                    pointRadius: 8,
-                    pointHoverRadius: 10
+                    borderColor: "#0f766e",
+                    backgroundColor: ["rgba(15, 118, 110, 0.42)", "rgba(15, 118, 110, 0.9)"],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    maxBarThickness: 88
                 },
                 {
+                    type: "line",
                     label: "Goal (2.8)",
                     data: [2.8, 2.8],
-                    borderColor: "#c62828",
-                    backgroundColor: "#c62828",
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
                     borderWidth: 3,
                     borderDash: [6, 4],
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    tension: 0
                 }
             ]
         },
@@ -402,7 +452,7 @@ function drawCharts(baseline, rate, sigma) {
                     title: {
                         display: true,
                         text: "Sigma Level",
-                        color: "#1f2933",
+                        color: "#172033",
                         font: { size: 13, weight: "700" }
                     }
                 }
@@ -412,30 +462,30 @@ function drawCharts(baseline, rate, sigma) {
 
     if (defChart) defChart.destroy();
     defChart = new Chart(document.getElementById("defChart"), {
-        type: "line",
+        type: "bar",
         data: {
             labels: labels,
             datasets: [
                 {
                     label: "% Defective",
                     data: [baseline.defect_rate, rate],
-                    tension: 0.25,
-                    fill: false,
-                    borderColor: "#5f4b8b",
-                    backgroundColor: "#5f4b8b",
-                    borderWidth: 4,
-                    pointRadius: 8,
-                    pointHoverRadius: 10
+                    borderColor: "#7c3aed",
+                    backgroundColor: ["rgba(124, 58, 237, 0.38)", "rgba(124, 58, 237, 0.88)"],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    maxBarThickness: 88
                 },
                 {
+                    type: "line",
                     label: "Goal (10%)",
                     data: [10, 10],
-                    borderColor: "#c62828",
-                    backgroundColor: "#c62828",
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
                     borderWidth: 3,
                     borderDash: [6, 4],
                     pointRadius: 0,
-                    pointHoverRadius: 0
+                    pointHoverRadius: 0,
+                    tension: 0
                 }
             ]
         },
@@ -453,7 +503,7 @@ function drawCharts(baseline, rate, sigma) {
                     title: {
                         display: true,
                         text: "Defective Rate",
-                        color: "#1f2933",
+                        color: "#172033",
                         font: { size: 13, weight: "700" }
                     }
                 }
