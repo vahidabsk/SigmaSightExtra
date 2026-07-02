@@ -49,6 +49,14 @@ Then open:
 http://127.0.0.1:8000
 ```
 
+The Control Phase page is available at:
+
+```text
+http://127.0.0.1:8000/control
+```
+
+It includes Stability, Pareto, Defect Types, and Reaction Plan tabs.
+
 ## Improvements From Original
 
 - Safer Excel upload handling

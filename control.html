@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SigmaSight Control Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --accent: #0f766e;
+            --accent-dark: #134e4a;
+            --ink: #172033;
+            --muted: #64748b;
+            --line: #d7dee8;
+            --panel: #ffffff;
+            --page: #eef4f7;
+            --good: #0f766e;
+            --warn: #f97316;
+            --bad: #dc2626;
+            --sigma: #0f766e;
+            --defective: #7c3aed;
+            --goal: #f97316;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                linear-gradient(180deg, #dff7f2 0, var(--page) 260px),
+                var(--page);
+            color: var(--ink);
+        }
+
+        main {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 22px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-end;
+            margin-bottom: 18px;
+        }
+
+        h1 {
+            margin: 0 0 4px;
+            color: var(--accent);
+            font-size: 30px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 10px;
+        }
+
+        .summary-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
+            min-height: 92px;
+        }
+
+        .summary-card strong {
+            display: block;
+            color: var(--accent);
+            font-size: 24px;
+            line-height: 1.1;
+            margin-bottom: 7px;
+        }
+
+        .summary-card span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .status-card {
+            border-left: 5px solid var(--accent);
+        }
+
+        .status-card.green { border-left-color: var(--good); }
+        .status-card.yellow { border-left-color: var(--warn); }
+        .status-card.red { border-left-color: var(--bad); }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 9px 14px;
+            background: #ffffff;
+            color: var(--ink);
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        .chart-card {
+            background: #fbfefd;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 460px;
+        }
+
+        .chart-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .chart-heading h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .chart-heading span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .chart-frame {
+            height: 360px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 12px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .reaction-table {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-weight: 700;
+            padding: 18px;
+            border: 1px dashed #a8b6c7;
+            border-radius: 8px;
+            background: #fbfefd;
+        }
+
+        @media (max-width: 700px) {
+            main { padding: 14px; }
+            header { display: block; }
+            h1 { font-size: 26px; }
+            .chart-heading { display: block; }
+            .chart-heading span { display: block; margin-top: 6px; }
+            th, td { font-size: 13px; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <header>
+        <div>
+            <h1>SigmaSight Control Center</h1>
+            <div class="subtitle">Control Phase monitoring for stability, Pareto focus, defect types, and reaction planning</div>
+        </div>
+    </header>
+
+    <section class="panel">
+        <div class="summary-grid">
+            <div id="statusCard" class="summary-card status-card">
+                <strong id="controlStatus">Waiting</strong>
+                <span>Control Status</span>
+            </div>
+            <div class="summary-card">
+                <strong id="latestRate">N/A</strong>
+                <span>Latest % Defective</span>
+            </div>
+            <div class="summary-card">
+                <strong id="latestSigma">N/A</strong>
+                <span>Latest Sigma</span>
+            </div>
+            <div class="summary-card">
+                <strong id="historyCount">0</strong>
+                <span>Runs in Control History</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <div class="tabs" role="tablist" aria-label="Control charts">
+            <button class="tab-button active" data-tab="stability">Stability</button>
+            <button class="tab-button" data-tab="pareto">Pareto</button>
+            <button class="tab-button" data-tab="types">Defect Types</button>
+            <button class="tab-button" data-tab="reaction">Reaction Plan</button>
+        </div>
+
+        <div id="emptyState" class="empty" style="display:none;">
+            Analyze an Excel file from the dashboard first. The Control Center will populate after the upload finishes.
+        </div>
+
+        <section id="stability" class="tab-panel active">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h2>Stability: % Defective Over Time</h2>
+                    <span>p-chart logic with center line and 3-sigma limits</span>
+                </div>
+                <div class="chart-frame"><canvas id="stabilityChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="pareto" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h2>Pareto: Top ASC Defect Contributors</h2>
+                    <span>Bars show counts, line shows cumulative %</span>
+                </div>
+                <div class="chart-frame"><canvas id="paretoChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="types" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h2>Defect Types</h2>
+                    <span>Reasons detected from contact fields</span>
+                </div>
+                <div class="chart-frame"><canvas id="typesChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="reaction" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h2>Reaction Plan</h2>
+                    <span>Control Phase response rules</span>
+                </div>
+                <div class="reaction-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Trigger</th>
+                                <th>Condition</th>
+                                <th>Action</th>
+                                <th>Owner</th>
+                                <th>Timing</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Goal miss</td>
+                                <td>% defective above 10%</td>
+                                <td>Review Pareto top ASC, validate source data, and assign corrective follow-up.</td>
+                                <td>Process owner</td>
+                                <td>Within 2 business days</td>
+                            </tr>
+                            <tr>
+                                <td>Special cause</td>
+                                <td>Point above UCL or sudden upward run</td>
+                                <td>Open containment review and check recent source-system or workflow changes.</td>
+                                <td>Green Belt / data owner</td>
+                                <td>Same week</td>
+                            </tr>
+                            <tr>
+                                <td>Pareto concentration</td>
+                                <td>Top 3 ASCs drive most defects</td>
+                                <td>Start targeted ASC cleanup instead of broad rework.</td>
+                                <td>ASC owner</td>
+                                <td>Next audit cycle</td>
+                            </tr>
+                            <tr>
+                                <td>Sustainment check</td>
+                                <td>Metric meets goal for 3 consecutive uploads</td>
+                                <td>Keep monitoring cadence and archive evidence for Control Phase signoff.</td>
+                                <td>Project owner</td>
+                                <td>Monthly</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </section>
+</main>
+
+<script>
+let stabilityChart;
+let paretoChart;
+let typesChart;
+
+function fmt(value, digits = 1) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return "N/A";
+    return Number(value).toFixed(digits);
+}
+
+function baseOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#172033",
+                    font: { size: 13, weight: "700" },
+                    usePointStyle: true,
+                    padding: 16
+                }
+            },
+            tooltip: {
+                backgroundColor: "#172033",
+                titleFont: { size: 14, weight: "700" },
+                bodyFont: { size: 13 },
+                padding: 12
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { color: "#172033", font: { size: 12, weight: "700" } }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: "#d9e2ec", lineWidth: 1.1 },
+                ticks: { color: "#475569", font: { size: 12, weight: "700" } }
+            }
+        }
+    };
+}
+
+async function loadControlData() {
+    const res = await fetch("/control-data");
+    const data = await res.json();
+
+    const hasData = data.latest && data.latest.total > 0;
+    document.getElementById("emptyState").style.display = hasData ? "none" : "block";
+
+    renderSummary(data);
+    renderStability(data);
+    renderPareto(data);
+    renderTypes(data);
+}
+
+function renderSummary(data) {
+    const reaction = data.reaction || {};
+    const latest = data.latest || {};
+    const statusCard = document.getElementById("statusCard");
+
+    statusCard.className = `summary-card status-card ${reaction.status_color || ""}`;
+    document.getElementById("controlStatus").innerText = reaction.status || "Waiting";
+    document.getElementById("latestRate").innerText = latest.defect_rate === undefined ? "N/A" : `${fmt(latest.defect_rate, 2)}%`;
+    document.getElementById("latestSigma").innerText = fmt(latest.sigma, 2);
+    document.getElementById("historyCount").innerText = (data.history || []).length;
+}
+
+function controlLimits(history) {
+    const totalUnits = history.reduce((sum, run) => sum + run.total, 0);
+    const totalDefective = history.reduce((sum, run) => sum + run.defective_units, 0);
+    const pbar = totalUnits ? totalDefective / totalUnits : 0;
+
+    return history.map(run => {
+        const sigma = run.total ? Math.sqrt((pbar * (1 - pbar)) / run.total) : 0;
+        return {
+            cl: pbar * 100,
+            ucl: Math.min(100, (pbar + 3 * sigma) * 100),
+            lcl: Math.max(0, (pbar - 3 * sigma) * 100),
+        };
+    });
+}
+
+function renderStability(data) {
+    const history = data.history || [];
+    const labels = history.map((run, index) => run.label || `Run ${index + 1}`);
+    const limits = controlLimits(history);
+
+    if (stabilityChart) stabilityChart.destroy();
+    stabilityChart = new Chart(document.getElementById("stabilityChart"), {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: "% Defective",
+                    data: history.map(run => run.defect_rate),
+                    borderColor: "#7c3aed",
+                    backgroundColor: "#7c3aed",
+                    pointBackgroundColor: "#7c3aed",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 4,
+                    pointRadius: 8,
+                    pointHoverRadius: 10,
+                    tension: 0.25
+                },
+                {
+                    label: "Center Line",
+                    data: limits.map(limit => limit.cl),
+                    borderColor: "#0f766e",
+                    backgroundColor: "#0f766e",
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: "UCL",
+                    data: limits.map(limit => limit.ucl),
+                    borderColor: "#dc2626",
+                    backgroundColor: "#dc2626",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                },
+                {
+                    label: "LCL",
+                    data: limits.map(limit => limit.lcl),
+                    borderColor: "#94a3b8",
+                    backgroundColor: "#94a3b8",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                },
+                {
+                    label: "Goal (10%)",
+                    data: history.map(() => 10),
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
+                    borderWidth: 3,
+                    borderDash: [4, 4],
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            ...baseOptions(),
+            scales: {
+                ...baseOptions().scales,
+                y: {
+                    ...baseOptions().scales.y,
+                    suggestedMax: Math.max(20, ...history.map(run => run.defect_rate + 8), ...limits.map(limit => limit.ucl + 4)),
+                    ticks: {
+                        ...baseOptions().scales.y.ticks,
+                        callback: value => `${value}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderPareto(data) {
+    const pareto = data.pareto || [];
+
+    if (paretoChart) paretoChart.destroy();
+    paretoChart = new Chart(document.getElementById("paretoChart"), {
+        data: {
+            labels: pareto.map(item => item.name),
+            datasets: [
+                {
+                    type: "bar",
+                    label: "Defective PSNs",
+                    data: pareto.map(item => item.count),
+                    backgroundColor: "rgba(15, 118, 110, 0.86)",
+                    borderColor: "#0f766e",
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    yAxisID: "y"
+                },
+                {
+                    type: "line",
+                    label: "Cumulative %",
+                    data: pareto.map(item => item.cumulative),
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
+                    pointBackgroundColor: "#f97316",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    yAxisID: "y1"
+                }
+            ]
+        },
+        options: {
+            ...baseOptions(),
+            scales: {
+                x: {
+                    ...baseOptions().scales.x,
+                    ticks: { ...baseOptions().scales.x.ticks, maxRotation: 35, minRotation: 0 }
+                },
+                y: {
+                    ...baseOptions().scales.y,
+                    title: { display: true, text: "Count", color: "#172033", font: { weight: "700" } }
+                },
+                y1: {
+                    position: "right",
+                    min: 0,
+                    max: 100,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: "#475569", callback: value => `${value}%` },
+                    title: { display: true, text: "Cumulative %", color: "#172033", font: { weight: "700" } }
+                }
+            }
+        }
+    });
+}
+
+function renderTypes(data) {
+    const types = data.defect_types || [];
+
+    if (typesChart) typesChart.destroy();
+    typesChart = new Chart(document.getElementById("typesChart"), {
+        type: "bar",
+        data: {
+            labels: types.map(item => item.type),
+            datasets: [{
+                label: "Detected defect reasons",
+                data: types.map(item => item.count),
+                backgroundColor: "rgba(124, 58, 237, 0.82)",
+                borderColor: "#7c3aed",
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            ...baseOptions(),
+            indexAxis: "y",
+            scales: {
+                x: {
+                    ...baseOptions().scales.y,
+                    beginAtZero: true
+                },
+                y: {
+                    ...baseOptions().scales.x,
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", () => {
+        const tab = button.dataset.tab;
+
+        document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(item => item.classList.remove("active"));
+
+        button.classList.add("active");
+        document.getElementById(tab).classList.add("active");
+
+        setTimeout(() => {
+            stabilityChart?.resize();
+            paretoChart?.resize();
+            typesChart?.resize();
+        }, 50);
+    });
+});
+
+loadControlData();
+</script>
+</body>
+</html>

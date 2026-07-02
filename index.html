@@ -221,6 +221,7 @@
         <div class="upload-row">
             <input type="file" id="fileInput" accept=".xlsx,.xls">
             <button id="analyzeButton" onclick="upload()">Analyze</button>
+            <button class="secondary" onclick="openControl()">Control Center</button>
             <button class="secondary" onclick="openDefects()">View Defective PSNs Map</button>
         </div>
         <div id="status" class="status">Upload the Excel file to calculate the current performance.</div>
@@ -282,6 +283,10 @@ let defChart;
 
 function openDefects() {
     window.open("/defects", "_blank");
+}
+
+function openControl() {
+    window.open("/control", "_blank");
 }
 
 function setStatus(message, isError = false) {
