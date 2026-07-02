@@ -49,13 +49,7 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-The Control Phase page is available at:
-
-```text
-http://127.0.0.1:8000/control
-```
-
-It includes Stability, Pareto, Defect Types, and Reaction Plan tabs.
+After analysis, the dashboard shows Control Phase tabs for Capability, Stability, Pareto, Defect Types, Heatmap, Top 10, Table, and Reaction Plan.
 
 ## Improvements From Original
 

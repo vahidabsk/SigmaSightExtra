@@ -157,6 +157,32 @@
             gap: 22px;
         }
 
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 9px 14px;
+            background: #ffffff;
+            color: var(--ink);
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         .chart-card {
             background: #fbfefd;
             border: 1px solid var(--line);
@@ -195,6 +221,153 @@
             height: 100% !important;
         }
 
+        .map-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        #map-container svg {
+            width: 100%;
+            height: 500px;
+            background: #fbfefd;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        path {
+            fill: #eef2f6;
+            stroke: #94a3b8;
+            stroke-width: 1;
+        }
+
+        .side-panel,
+        .table-panel {
+            background: #fbfefd;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .company-item {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .rank {
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .count {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .table-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .table-header span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .table-scroll {
+            max-height: 440px;
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 12px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            z-index: 1;
+        }
+
+        .state-col { width: 170px; font-weight: 800; }
+        .count-col { width: 90px; text-align: center; }
+
+        .psn-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .psn-chip {
+            display: inline-flex;
+            align-items: center;
+            max-width: 180px;
+            min-height: 26px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef8f6;
+            border: 1px solid #bfebe3;
+            color: var(--accent-dark);
+            font-size: 12px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .count-badge {
+            display: inline-flex;
+            min-width: 34px;
+            justify-content: center;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            font-weight: 800;
+        }
+
+        .reaction-table {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-weight: 700;
+            padding: 18px;
+            border: 1px dashed #a8b6c7;
+            border-radius: 8px;
+            background: #fbfefd;
+        }
+
         @media (min-width: 780px) {
             .charts { grid-template-columns: 1fr 1fr; }
         }
@@ -204,6 +377,10 @@
             main { padding: 14px; }
             h1 { font-size: 26px; }
             button { width: 100%; }
+            .map-layout { grid-template-columns: 1fr; }
+            #map-container svg { height: auto; }
+            .state-col { width: 110px; }
+            .count-col { width: 70px; }
         }
     </style>
 </head>
@@ -221,8 +398,6 @@
         <div class="upload-row">
             <input type="file" id="fileInput" accept=".xlsx,.xls">
             <button id="analyzeButton" onclick="upload()">Analyze</button>
-            <button class="secondary" onclick="openControl()">Control Center</button>
-            <button class="secondary" onclick="openDefects()">View Defective PSNs Map</button>
         </div>
         <div id="status" class="status">Upload the Excel file to calculate the current performance.</div>
     </section>
@@ -253,41 +428,136 @@
 
     <div id="improve" class="improvement"></div>
 
-    <section id="charts" class="panel" style="display:none;">
-        <div class="charts">
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Sigma Capability</h3>
-                    <span>Goal: 2.8</span>
-                </div>
-                <div class="chart-frame">
-                    <canvas id="zChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Defective Rate</h3>
-                    <span>Goal: 10%</span>
-                </div>
-                <div class="chart-frame">
-                    <canvas id="defChart"></canvas>
-                </div>
-            </div>
+    <section id="dashboardTabs" class="panel" style="display:none;">
+        <div class="tabs" role="tablist" aria-label="Dashboard views">
+            <button class="tab-button active" data-tab="capability">Capability</button>
+            <button class="tab-button" data-tab="stability">Stability</button>
+            <button class="tab-button" data-tab="pareto">Pareto</button>
+            <button class="tab-button" data-tab="types">Defect Types</button>
+            <button class="tab-button" data-tab="heatmap">Heatmap</button>
+            <button class="tab-button" data-tab="top10">Top 10</button>
+            <button class="tab-button" data-tab="defectTable">Table</button>
+            <button class="tab-button" data-tab="reaction">Reaction Plan</button>
         </div>
+
+        <section id="capability" class="tab-panel active">
+            <div class="charts">
+                <div class="chart-card">
+                    <div class="chart-heading">
+                        <h3>Sigma Capability</h3>
+                        <span>Goal: 2.8</span>
+                    </div>
+                    <div class="chart-frame"><canvas id="zChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-heading">
+                        <h3>Defective Rate</h3>
+                        <span>Goal: 10%</span>
+                    </div>
+                    <div class="chart-frame"><canvas id="defChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="stability" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Stability: % Defective Over Time</h3>
+                    <span>Center line, UCL, LCL, and goal</span>
+                </div>
+                <div class="chart-frame"><canvas id="stabilityChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="pareto" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Pareto: Top ASC Defect Contributors</h3>
+                    <span>Count and cumulative %</span>
+                </div>
+                <div class="chart-frame"><canvas id="paretoChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="types" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Defect Types</h3>
+                    <span>Detected from contact fields</span>
+                </div>
+                <div class="chart-frame"><canvas id="typesChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="heatmap" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Defective PSNs Heatmap</h3>
+                    <span>US states colored by defect count</span>
+                </div>
+                <div id="map-container"></div>
+            </div>
+        </section>
+
+        <section id="top10" class="tab-panel">
+            <div class="side-panel">
+                <h3>Top 10 ASCs</h3>
+                <div id="companyList"></div>
+            </div>
+        </section>
+
+        <section id="defectTable" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Defective PSNs by State</h3>
+                    <span id="tableSummary"></span>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="state-col">State</th>
+                                <th class="count-col">Count</th>
+                                <th>PSNs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="defectRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="reaction" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Reaction Plan</h3>
+                    <span>Uses current Pareto data</span>
+                </div>
+                <div class="reaction-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Trigger</th>
+                                <th>Condition</th>
+                                <th>Action</th>
+                                <th>Owner</th>
+                                <th>Timing</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reactionRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
     </section>
 </main>
 
 <script>
 let zChart;
 let defChart;
-
-function openDefects() {
-    window.open("/defects", "_blank");
-}
-
-function openControl() {
-    window.open("/control", "_blank");
-}
+let stabilityChart;
+let paretoChart;
+let typesChart;
 
 function setStatus(message, isError = false) {
     const status = document.getElementById("status");
@@ -369,10 +639,11 @@ function renderResults(data) {
         "Metric Facts (Analyzed - " + today + ")";
 
     document.getElementById("current").style.display = "block";
-    document.getElementById("charts").style.display = "block";
+    document.getElementById("dashboardTabs").style.display = "block";
     document.getElementById("improve").style.display = "block";
 
     drawCharts(baseline, rate, sigma);
+    loadDashboardTabs();
 }
 
 function drawCharts(baseline, rate, sigma) {
@@ -528,6 +799,387 @@ function drawCharts(baseline, rate, sigma) {
         }
     });
 }
+
+function baseOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#172033",
+                    font: { size: 13, weight: "700" },
+                    usePointStyle: true,
+                    padding: 16
+                }
+            },
+            tooltip: {
+                backgroundColor: "#172033",
+                titleFont: { size: 14, weight: "700" },
+                bodyFont: { size: 13 },
+                padding: 12
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { color: "#172033", font: { size: 12, weight: "700" } }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: "#d9e2ec", lineWidth: 1.1 },
+                ticks: { color: "#475569", font: { size: 12, weight: "700" } }
+            }
+        }
+    };
+}
+
+async function loadDashboardTabs() {
+    const [controlRes, detailsRes, companiesRes, svgRes] = await Promise.all([
+        fetch("/control-data"),
+        fetch("/defects-details"),
+        fetch("/top-companies"),
+        fetch("/static/us.svg")
+    ]);
+
+    const controlData = await controlRes.json();
+    const defectDetails = detailsRes.ok ? await detailsRes.json() : {};
+    const companies = await companiesRes.json();
+    const svgText = await svgRes.text();
+
+    renderStability(controlData);
+    renderPareto(controlData);
+    renderTypes(controlData);
+    renderHeatmap(defectDetails, svgText);
+    renderTopCompanies(companies);
+    renderDefectTable(defectDetails);
+    renderReactionPlan(controlData);
+}
+
+function controlLimits(history) {
+    const totalUnits = history.reduce((sum, run) => sum + run.total, 0);
+    const totalDefective = history.reduce((sum, run) => sum + run.defective_units, 0);
+    const pbar = totalUnits ? totalDefective / totalUnits : 0;
+
+    return history.map(run => {
+        const sigma = run.total ? Math.sqrt((pbar * (1 - pbar)) / run.total) : 0;
+        return {
+            cl: pbar * 100,
+            ucl: Math.min(100, (pbar + 3 * sigma) * 100),
+            lcl: Math.max(0, (pbar - 3 * sigma) * 100),
+        };
+    });
+}
+
+function renderStability(data) {
+    const history = data.history || [];
+    const labels = history.map((run, index) => run.label || `Run ${index + 1}`);
+    const limits = controlLimits(history);
+
+    if (stabilityChart) stabilityChart.destroy();
+    stabilityChart = new Chart(document.getElementById("stabilityChart"), {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: "% Defective",
+                    data: history.map(run => run.defect_rate),
+                    borderColor: "#7c3aed",
+                    backgroundColor: "#7c3aed",
+                    pointBackgroundColor: "#7c3aed",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 4,
+                    pointRadius: 8,
+                    pointHoverRadius: 10,
+                    tension: 0.25
+                },
+                {
+                    label: "Center Line",
+                    data: limits.map(limit => limit.cl),
+                    borderColor: "#0f766e",
+                    backgroundColor: "#0f766e",
+                    borderWidth: 2,
+                    pointRadius: 0
+                },
+                {
+                    label: "UCL",
+                    data: limits.map(limit => limit.ucl),
+                    borderColor: "#dc2626",
+                    backgroundColor: "#dc2626",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                },
+                {
+                    label: "LCL",
+                    data: limits.map(limit => limit.lcl),
+                    borderColor: "#94a3b8",
+                    backgroundColor: "#94a3b8",
+                    borderWidth: 2,
+                    borderDash: [6, 4],
+                    pointRadius: 0
+                },
+                {
+                    label: "Goal (10%)",
+                    data: history.map(() => 10),
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
+                    borderWidth: 3,
+                    borderDash: [4, 4],
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            ...baseOptions(),
+            scales: {
+                ...baseOptions().scales,
+                y: {
+                    ...baseOptions().scales.y,
+                    suggestedMax: Math.max(20, ...history.map(run => run.defect_rate + 8), ...limits.map(limit => limit.ucl + 4)),
+                    ticks: {
+                        ...baseOptions().scales.y.ticks,
+                        callback: value => `${value}%`
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderPareto(data) {
+    const pareto = data.pareto || [];
+
+    if (paretoChart) paretoChart.destroy();
+    paretoChart = new Chart(document.getElementById("paretoChart"), {
+        data: {
+            labels: pareto.map(item => item.name),
+            datasets: [
+                {
+                    type: "bar",
+                    label: "Defective PSNs",
+                    data: pareto.map(item => item.count),
+                    backgroundColor: "rgba(15, 118, 110, 0.86)",
+                    borderColor: "#0f766e",
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    yAxisID: "y"
+                },
+                {
+                    type: "line",
+                    label: "Cumulative %",
+                    data: pareto.map(item => item.cumulative),
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
+                    pointBackgroundColor: "#f97316",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    yAxisID: "y1"
+                }
+            ]
+        },
+        options: {
+            ...baseOptions(),
+            scales: {
+                x: {
+                    ...baseOptions().scales.x,
+                    ticks: { ...baseOptions().scales.x.ticks, maxRotation: 35, minRotation: 0 }
+                },
+                y: {
+                    ...baseOptions().scales.y,
+                    title: { display: true, text: "Count", color: "#172033", font: { weight: "700" } }
+                },
+                y1: {
+                    position: "right",
+                    min: 0,
+                    max: 100,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: "#475569", callback: value => `${value}%` },
+                    title: { display: true, text: "Cumulative %", color: "#172033", font: { weight: "700" } }
+                }
+            }
+        }
+    });
+}
+
+function renderTypes(data) {
+    const types = data.defect_types || [];
+
+    if (typesChart) typesChart.destroy();
+    typesChart = new Chart(document.getElementById("typesChart"), {
+        type: "bar",
+        data: {
+            labels: types.map(item => item.type),
+            datasets: [{
+                label: "Detected defect reasons",
+                data: types.map(item => item.count),
+                backgroundColor: "rgba(124, 58, 237, 0.82)",
+                borderColor: "#7c3aed",
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            ...baseOptions(),
+            indexAxis: "y",
+            scales: {
+                x: { ...baseOptions().scales.y, beginAtZero: true },
+                y: { ...baseOptions().scales.x, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getColor(count, min, max) {
+    if (max === min) return "#99f6e4";
+    const ratio = (count - min) / (max - min);
+    const light = [204, 251, 241];
+    const dark = [15, 118, 110];
+    const mixed = light.map((value, index) => Math.floor(value + (dark[index] - value) * ratio));
+    return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+}
+
+function renderHeatmap(data, svgText) {
+    const mapContainer = document.getElementById("map-container");
+    mapContainer.innerHTML = svgText;
+
+    const counts = Object.values(data).map(items => items.length);
+    if (!counts.length) return;
+
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    const stateToAbbrev = {
+        "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE",
+        "Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS",
+        "Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+        "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY",
+        "North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI",
+        "South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
+        "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY"
+    };
+
+    Object.values(stateToAbbrev).forEach(abbrev => {
+        stateToAbbrev[abbrev] = abbrev;
+    });
+
+    for (const state in data) {
+        const cleanState = state.trim();
+        const count = data[state].length;
+        const abbrev = stateToAbbrev[cleanState];
+        if (!abbrev) continue;
+
+        const stateElement = document.getElementById(abbrev);
+        if (!stateElement) continue;
+
+        stateElement.style.fill = getColor(count, min, max);
+        stateElement.style.stroke = "#0f766e";
+        stateElement.style.strokeWidth = "1.4";
+
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = `${cleanState}: ${count} defective PSNs`;
+        stateElement.appendChild(title);
+    }
+}
+
+function renderTopCompanies(companies) {
+    const companyList = document.getElementById("companyList");
+    companyList.innerHTML = "";
+
+    companies.forEach((item, index) => {
+        companyList.innerHTML += `
+            <div class="company-item">
+                <div class="rank">${index + 1}. ${escapeHtml(item[0])}</div>
+                <div class="count">${item[1]} defective PSNs</div>
+            </div>
+        `;
+    });
+}
+
+function psnChips(items) {
+    return items
+        .map(item => `<span class="psn-chip">${escapeHtml(item.psn || "Unknown")}</span>`)
+        .join("");
+}
+
+function renderDefectTable(data) {
+    const table = document.getElementById("defectRows");
+    const tableSummary = document.getElementById("tableSummary");
+    const counts = Object.values(data).map(items => items.length);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+
+    tableSummary.textContent = `${Object.keys(data).length} states | ${total} PSNs`;
+    table.innerHTML = "";
+
+    Object.keys(data)
+        .sort((a, b) => data[b].length - data[a].length || a.localeCompare(b))
+        .forEach(state => {
+            const items = data[state];
+            table.innerHTML += `
+                <tr>
+                    <td class="state-col">${escapeHtml(state.trim())}</td>
+                    <td class="count-col"><span class="count-badge">${items.length}</span></td>
+                    <td><div class="psn-list">${psnChips(items)}</div></td>
+                </tr>
+            `;
+        });
+}
+
+function ascListText(pareto, limit = 3) {
+    const top = pareto.slice(0, limit);
+    if (!top.length) return "No ASC data loaded yet";
+    return top.map(item => `${item.name} (${item.count})`).join(", ");
+}
+
+function renderReactionPlan(data) {
+    const rows = document.getElementById("reactionRows");
+    const pareto = data.pareto || [];
+    const latest = data.latest || {};
+    const topAsc = pareto[0];
+    const topThree = ascListText(pareto, 3);
+    const latestRate = latest.defect_rate === undefined ? "N/A" : `${Number(latest.defect_rate).toFixed(2)}%`;
+    const topAscName = topAsc ? topAsc.name : "No ASC loaded";
+    const topAscCount = topAsc ? topAsc.count : 0;
+
+    const plan = [
+        ["Goal miss", `Current defective rate is ${latestRate}; goal is 10%.`, `Review ${topAscName} first (${topAscCount} defective PSNs), validate source data, and assign corrective follow-up.`, "Process owner", "Within 2 business days"],
+        ["Special cause", "Point above UCL or sudden upward run on the Stability tab.", `Check whether the shift is concentrated in ${topAscName}; compare recent source-system or workflow changes.`, "Green Belt / data owner", "Same week"],
+        ["Pareto concentration", `Current top ASCs: ${topThree}.`, `Start targeted cleanup for ${topThree} before broad rework.`, "ASC owner", "Next audit cycle"],
+        ["Sustainment check", "Metric meets goal for 3 consecutive uploads.", `Keep monitoring cadence and archive evidence; continue spot checks for ${topAscName}.`, "Project owner", "Monthly"]
+    ];
+
+    rows.innerHTML = plan.map(row => `
+        <tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>
+    `).join("");
+}
+
+document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", () => {
+        const tab = button.dataset.tab;
+        document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(tab).classList.add("active");
+
+        setTimeout(() => {
+            zChart?.resize();
+            defChart?.resize();
+            stabilityChart?.resize();
+            paretoChart?.resize();
+            typesChart?.resize();
+        }, 50);
+    });
+});
 </script>
 </body>
 </html>

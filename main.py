@@ -378,7 +378,3 @@ def home():
 @app.get("/defects")
 def defects_page():
     return FileResponse(BASE_DIR / "defects.html")
-
-@app.get("/control")
-def control_page():
-    return FileResponse(BASE_DIR / "control.html")
