@@ -630,13 +630,9 @@ function renderResults(data) {
     document.getElementById("improve").innerText =
         `${improvement.toFixed(1)}% point improvement | ${reduction.toFixed(1)}% defect reduction`;
 
-    const today = new Date().toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-    });
+    const reportDate = data.report_date || "Unknown Report Date";
     document.getElementById("analysisTitle").innerText =
-        "Metric Facts (Analyzed - " + today + ")";
+        "Metric Facts (Report Date - " + reportDate + ")";
 
     document.getElementById("current").style.display = "block";
     document.getElementById("dashboardTabs").style.display = "block";

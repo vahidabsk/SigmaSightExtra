@@ -178,6 +178,44 @@ def evaluate_contacts(blob):
     return True, sorted(set(reasons))
 
 
+def format_date(value):
+    parsed = pd.to_datetime(value, errors="coerce")
+
+    if pd.isna(parsed):
+        return None
+
+    return f"{parsed.strftime('%B')} {parsed.day}, {parsed.year}"
+
+
+def extract_report_date(df):
+    search_rows = min(12, len(df.index))
+    search_cols = min(12, len(df.columns))
+
+    for row_index in range(search_rows):
+        for col_index in range(search_cols):
+            value = df.iat[row_index, col_index]
+
+            if pd.isna(value):
+                continue
+
+            if not isinstance(value, str):
+                formatted = format_date(value)
+                if formatted:
+                    return formatted
+                continue
+
+            text = value.strip()
+            match = re.search(r'report\s*date\s*:?\s*(.+)', text, flags=re.I)
+
+            if match:
+                formatted = format_date(match.group(1).strip())
+                if formatted:
+                    return formatted
+
+    now = datetime.now()
+    return f"{now.strftime('%B')} {now.day}, {now.year}"
+
+
 def erfinv(y):
     a = 0.147
     sign = 1 if y >= 0 else -1
@@ -204,6 +242,8 @@ async def upload(file: UploadFile = File(...)):
             status_code=400,
             detail=f"Expected at least {REQUIRED_COLUMNS} columns, but found {df.shape[1]}.",
         )
+
+    report_date = extract_report_date(df)
 
     total = 0
     defective_units = 0
@@ -263,6 +303,7 @@ async def upload(file: UploadFile = File(...)):
             "defect_rate": 0,
             "dpmo": 0,
             "sigma": None,
+            "report_date": report_date,
             "baseline": BASELINE,
         }
         return latest_summary
@@ -278,8 +319,6 @@ async def upload(file: UploadFile = File(...)):
     else:
         sigma = None
 
-    now = datetime.now()
-    analyzed_at = f"{now.strftime('%B')} {now.day}, {now.year}"
     latest_summary = {
         "total": total,
         "defective_units": defective_units,
@@ -288,11 +327,12 @@ async def upload(file: UploadFile = File(...)):
         "defect_rate": defect_rate,
         "dpmo": dpmo,
         "sigma": sigma,
+        "report_date": report_date,
         "baseline": BASELINE,
     }
 
     analysis_history.append({
-        "label": analyzed_at,
+        "label": report_date,
         "total": total,
         "defective_units": defective_units,
         "total_defects": total_defects,
