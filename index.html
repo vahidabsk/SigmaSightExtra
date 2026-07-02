@@ -236,6 +236,18 @@
             border-radius: 8px;
         }
 
+        .state-label {
+            fill: #0f172a;
+            font-size: 10px;
+            font-weight: 900;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            paint-order: stroke;
+            stroke: rgba(255, 255, 255, 0.92);
+            stroke-width: 3px;
+            pointer-events: none;
+        }
+
         path {
             fill: #eef2f6;
             stroke: #94a3b8;
@@ -342,6 +354,34 @@
             overflow-wrap: anywhere;
         }
 
+        .psn-chip:hover,
+        .psn-chip:focus {
+            background: #ccfbf1;
+            border-color: var(--accent);
+            outline: 2px solid rgba(15, 118, 110, 0.18);
+        }
+
+        .psn-tooltip {
+            position: fixed;
+            display: none;
+            z-index: 20;
+            max-width: 280px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #172033;
+            color: white;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .psn-tooltip strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
         .count-badge {
             display: inline-flex;
             min-width: 34px;
@@ -351,12 +391,6 @@
             background: var(--accent);
             color: white;
             font-weight: 800;
-        }
-
-        .reaction-table {
-            overflow: hidden;
-            border: 1px solid var(--line);
-            border-radius: 8px;
         }
 
         .empty {
@@ -437,7 +471,6 @@
             <button class="tab-button" data-tab="heatmap">Heatmap</button>
             <button class="tab-button" data-tab="top10">Top 10</button>
             <button class="tab-button" data-tab="defectTable">Table</button>
-            <button class="tab-button" data-tab="reaction">Reaction Plan</button>
         </div>
 
         <section id="capability" class="tab-panel active">
@@ -527,30 +560,10 @@
             </div>
         </section>
 
-        <section id="reaction" class="tab-panel">
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Reaction Plan</h3>
-                    <span>Uses current Pareto data</span>
-                </div>
-                <div class="reaction-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Trigger</th>
-                                <th>Condition</th>
-                                <th>Action</th>
-                                <th>Owner</th>
-                                <th>Timing</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reactionRows"></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
     </section>
 </main>
+
+<div id="psnTooltip" class="psn-tooltip"></div>
 
 <script>
 let zChart;
@@ -558,6 +571,41 @@ let defChart;
 let stabilityChart;
 let paretoChart;
 let typesChart;
+
+const controlLinePlugin = {
+    id: "controlLinePlugin",
+    afterDatasetsDraw(chart) {
+        const lines = chart.options.plugins?.controlLines;
+        if (!lines || !lines.length) return;
+
+        const { ctx, chartArea, scales } = chart;
+        if (!chartArea || !scales.y) return;
+
+        ctx.save();
+        lines.forEach(line => {
+            const y = scales.y.getPixelForValue(line.value);
+            if (!Number.isFinite(y) || y < chartArea.top || y > chartArea.bottom) return;
+
+            ctx.beginPath();
+            ctx.setLineDash(line.dash || []);
+            ctx.lineWidth = line.width || 2;
+            ctx.strokeStyle = line.color;
+            ctx.moveTo(chartArea.left, y);
+            ctx.lineTo(chartArea.right, y);
+            ctx.stroke();
+
+            ctx.setLineDash([]);
+            ctx.font = "700 12px Arial";
+            ctx.fillStyle = line.color;
+            ctx.textAlign = "right";
+            ctx.textBaseline = "bottom";
+            ctx.fillText(line.label, chartArea.right - 6, y - 4);
+        });
+        ctx.restore();
+    }
+};
+
+Chart.register(controlLinePlugin);
 
 function setStatus(message, isError = false) {
     const status = document.getElementById("status");
@@ -849,7 +897,6 @@ async function loadDashboardTabs() {
     renderHeatmap(defectDetails, svgText);
     renderTopCompanies(companies);
     renderDefectTable(defectDetails);
-    renderReactionPlan(controlData);
 }
 
 function controlLimits(history) {
@@ -871,6 +918,7 @@ function renderStability(data) {
     const history = data.history || [];
     const labels = history.map((run, index) => run.label || `Run ${index + 1}`);
     const limits = controlLimits(history);
+    const latestLimit = limits[limits.length - 1] || { cl: 0, ucl: 0, lcl: 0 };
 
     if (stabilityChart) stabilityChart.destroy();
     stabilityChart = new Chart(document.getElementById("stabilityChart"), {
@@ -896,7 +944,8 @@ function renderStability(data) {
                     borderColor: "#0f766e",
                     backgroundColor: "#0f766e",
                     borderWidth: 2,
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointHoverRadius: 5
                 },
                 {
                     label: "UCL",
@@ -905,7 +954,8 @@ function renderStability(data) {
                     backgroundColor: "#dc2626",
                     borderWidth: 2,
                     borderDash: [6, 4],
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointHoverRadius: 5
                 },
                 {
                     label: "LCL",
@@ -914,7 +964,8 @@ function renderStability(data) {
                     backgroundColor: "#94a3b8",
                     borderWidth: 2,
                     borderDash: [6, 4],
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointHoverRadius: 5
                 },
                 {
                     label: "Goal (10%)",
@@ -923,12 +974,22 @@ function renderStability(data) {
                     backgroundColor: "#f97316",
                     borderWidth: 3,
                     borderDash: [4, 4],
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointHoverRadius: 5
                 }
             ]
         },
         options: {
             ...baseOptions(),
+            plugins: {
+                ...baseOptions().plugins,
+                controlLines: [
+                    { label: `UCL ${latestLimit.ucl.toFixed(1)}%`, value: latestLimit.ucl, color: "#dc2626", dash: [7, 5], width: 3 },
+                    { label: `Center ${latestLimit.cl.toFixed(1)}%`, value: latestLimit.cl, color: "#0f766e", width: 3 },
+                    { label: `LCL ${latestLimit.lcl.toFixed(1)}%`, value: latestLimit.lcl, color: "#64748b", dash: [7, 5], width: 3 },
+                    { label: "Goal 10%", value: 10, color: "#f97316", dash: [4, 4], width: 3 }
+                ]
+            },
             scales: {
                 ...baseOptions().scales,
                 y: {
@@ -1049,6 +1110,7 @@ function getColor(count, min, max) {
 function renderHeatmap(data, svgText) {
     const mapContainer = document.getElementById("map-container");
     mapContainer.innerHTML = svgText;
+    const svg = mapContainer.querySelector("svg");
 
     const counts = Object.values(data).map(items => items.length);
     if (!counts.length) return;
@@ -1067,6 +1129,27 @@ function renderHeatmap(data, svgText) {
 
     Object.values(stateToAbbrev).forEach(abbrev => {
         stateToAbbrev[abbrev] = abbrev;
+    });
+
+    const addStateLabel = (stateElement, abbrev) => {
+        if (!svg || !stateElement || svg.querySelector(`text[data-state-label="${abbrev}"]`)) return;
+
+        try {
+            const box = stateElement.getBBox();
+            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            label.setAttribute("class", "state-label");
+            label.setAttribute("data-state-label", abbrev);
+            label.setAttribute("x", box.x + box.width / 2);
+            label.setAttribute("y", box.y + box.height / 2);
+            label.textContent = abbrev;
+            svg.appendChild(label);
+        } catch (error) {
+            // Some SVG shapes may not expose a usable box in every browser.
+        }
+    };
+
+    Object.values(stateToAbbrev).forEach(abbrev => {
+        addStateLabel(document.getElementById(abbrev), abbrev);
     });
 
     for (const state in data) {
@@ -1104,7 +1187,16 @@ function renderTopCompanies(companies) {
 
 function psnChips(items) {
     return items
-        .map(item => `<span class="psn-chip">${escapeHtml(item.psn || "Unknown")}</span>`)
+        .map(item => `
+            <span
+                class="psn-chip"
+                tabindex="0"
+                data-psn="${escapeHtml(item.psn || "Unknown")}"
+                data-asc="${escapeHtml(item.asc_name || "Unknown")}"
+                data-city="${escapeHtml(item.city || "Unknown")}"
+                data-state="${escapeHtml(item.state || "Unknown")}"
+            >${escapeHtml(item.psn || "Unknown")}</span>
+        `)
         .join("");
 }
 
@@ -1131,34 +1223,6 @@ function renderDefectTable(data) {
         });
 }
 
-function ascListText(pareto, limit = 3) {
-    const top = pareto.slice(0, limit);
-    if (!top.length) return "No ASC data loaded yet";
-    return top.map(item => `${item.name} (${item.count})`).join(", ");
-}
-
-function renderReactionPlan(data) {
-    const rows = document.getElementById("reactionRows");
-    const pareto = data.pareto || [];
-    const latest = data.latest || {};
-    const topAsc = pareto[0];
-    const topThree = ascListText(pareto, 3);
-    const latestRate = latest.defect_rate === undefined ? "N/A" : `${Number(latest.defect_rate).toFixed(2)}%`;
-    const topAscName = topAsc ? topAsc.name : "No ASC loaded";
-    const topAscCount = topAsc ? topAsc.count : 0;
-
-    const plan = [
-        ["Goal miss", `Current defective rate is ${latestRate}; goal is 10%.`, `Review ${topAscName} first (${topAscCount} defective PSNs), validate source data, and assign corrective follow-up.`, "Process owner", "Within 2 business days"],
-        ["Special cause", "Point above UCL or sudden upward run on the Stability tab.", `Check whether the shift is concentrated in ${topAscName}; compare recent source-system or workflow changes.`, "Green Belt / data owner", "Same week"],
-        ["Pareto concentration", `Current top ASCs: ${topThree}.`, `Start targeted cleanup for ${topThree} before broad rework.`, "ASC owner", "Next audit cycle"],
-        ["Sustainment check", "Metric meets goal for 3 consecutive uploads.", `Keep monitoring cadence and archive evidence; continue spot checks for ${topAscName}.`, "Project owner", "Monthly"]
-    ];
-
-    rows.innerHTML = plan.map(row => `
-        <tr>${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>
-    `).join("");
-}
-
 document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", () => {
         const tab = button.dataset.tab;
@@ -1176,6 +1240,61 @@ document.querySelectorAll(".tab-button").forEach(button => {
         }, 50);
     });
 });
+
+document.addEventListener("mouseover", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    showPsnTooltip(chip, event.clientX, event.clientY);
+});
+
+document.addEventListener("mousemove", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    movePsnTooltip(event.clientX, event.clientY);
+});
+
+document.addEventListener("mouseout", event => {
+    if (!event.target.closest(".psn-chip")) return;
+    hidePsnTooltip();
+});
+
+document.addEventListener("focusin", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    const box = chip.getBoundingClientRect();
+    showPsnTooltip(chip, box.left + box.width / 2, box.top);
+});
+
+document.addEventListener("focusout", event => {
+    if (!event.target.closest(".psn-chip")) return;
+    hidePsnTooltip();
+});
+
+function showPsnTooltip(chip, x, y) {
+    const tooltip = document.getElementById("psnTooltip");
+    tooltip.innerHTML = `
+        <strong>PSN ${escapeHtml(chip.dataset.psn)}</strong>
+        ASC: ${escapeHtml(chip.dataset.asc)}<br>
+        City: ${escapeHtml(chip.dataset.city)}<br>
+        State: ${escapeHtml(chip.dataset.state)}
+    `;
+    tooltip.style.display = "block";
+    movePsnTooltip(x, y);
+}
+
+function movePsnTooltip(x, y) {
+    const tooltip = document.getElementById("psnTooltip");
+    const margin = 14;
+    const width = tooltip.offsetWidth || 260;
+    const left = Math.min(window.innerWidth - width - margin, x + margin);
+    const top = Math.max(margin, y - tooltip.offsetHeight - margin);
+    tooltip.style.left = `${Math.max(margin, left)}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+function hidePsnTooltip() {
+    document.getElementById("psnTooltip").style.display = "none";
+}
 </script>
 </body>
 </html>
