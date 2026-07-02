@@ -228,23 +228,38 @@
             align-items: start;
         }
 
+        #map-container {
+            position: relative;
+        }
+
         #map-container svg {
             width: 100%;
             height: 500px;
             background: #fbfefd;
             border: 1px solid var(--line);
             border-radius: 8px;
+            display: block;
         }
 
-        .state-label {
-            fill: #0f172a;
-            font-size: 10px;
+        .map-label-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .map-state-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            color: #0f172a;
+            font-size: 11px;
             font-weight: 900;
-            text-anchor: middle;
-            dominant-baseline: middle;
-            paint-order: stroke;
-            stroke: rgba(255, 255, 255, 0.92);
-            stroke-width: 3px;
+            line-height: 1;
+            text-shadow:
+                -1px -1px 0 rgba(255, 255, 255, 0.95),
+                1px -1px 0 rgba(255, 255, 255, 0.95),
+                -1px 1px 0 rgba(255, 255, 255, 0.95),
+                1px 1px 0 rgba(255, 255, 255, 0.95),
+                0 0 5px rgba(255, 255, 255, 0.95);
             pointer-events: none;
         }
 
@@ -571,6 +586,7 @@ let defChart;
 let stabilityChart;
 let paretoChart;
 let typesChart;
+let mapLabelAbbrevs = [];
 
 const controlLinePlugin = {
     id: "controlLinePlugin",
@@ -1109,8 +1125,9 @@ function getColor(count, min, max) {
 
 function renderHeatmap(data, svgText) {
     const mapContainer = document.getElementById("map-container");
-    mapContainer.innerHTML = svgText;
+    mapContainer.innerHTML = `${svgText}<div class="map-label-layer" id="mapLabelLayer"></div>`;
     const svg = mapContainer.querySelector("svg");
+    const labelLayer = document.getElementById("mapLabelLayer");
 
     const counts = Object.values(data).map(items => items.length);
     if (!counts.length) return;
@@ -1131,25 +1148,11 @@ function renderHeatmap(data, svgText) {
         stateToAbbrev[abbrev] = abbrev;
     });
 
-    const addStateLabel = (stateElement, abbrev) => {
-        if (!svg || !stateElement || svg.querySelector(`text[data-state-label="${abbrev}"]`)) return;
-
-        try {
-            const box = stateElement.getBBox();
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("class", "state-label");
-            label.setAttribute("data-state-label", abbrev);
-            label.setAttribute("x", box.x + box.width / 2);
-            label.setAttribute("y", box.y + box.height / 2);
-            label.textContent = abbrev;
-            svg.appendChild(label);
-        } catch (error) {
-            // Some SVG shapes may not expose a usable box in every browser.
-        }
-    };
+    const stateElements = {};
+    mapLabelAbbrevs = [...new Set(Object.values(stateToAbbrev))];
 
     Object.values(stateToAbbrev).forEach(abbrev => {
-        addStateLabel(document.getElementById(abbrev), abbrev);
+        stateElements[abbrev] = svg.querySelector(`#${abbrev}`);
     });
 
     for (const state in data) {
@@ -1158,7 +1161,7 @@ function renderHeatmap(data, svgText) {
         const abbrev = stateToAbbrev[cleanState];
         if (!abbrev) continue;
 
-        const stateElement = document.getElementById(abbrev);
+        const stateElement = stateElements[abbrev] || svg.querySelector(`#${abbrev}`);
         if (!stateElement) continue;
 
         stateElement.style.fill = getColor(count, min, max);
@@ -1169,6 +1172,40 @@ function renderHeatmap(data, svgText) {
         title.textContent = `${cleanState}: ${count} defective PSNs`;
         stateElement.appendChild(title);
     }
+
+    requestAnimationFrame(refreshMapLabels);
+}
+
+function refreshMapLabels() {
+    const mapContainer = document.getElementById("map-container");
+    const svg = mapContainer?.querySelector("svg");
+    const labelLayer = document.getElementById("mapLabelLayer");
+    if (!svg || !labelLayer || !mapLabelAbbrevs.length) return;
+
+    const svgBox = svg.getBoundingClientRect();
+    if (!svgBox.width || !svgBox.height) return;
+
+    labelLayer.innerHTML = "";
+
+    mapLabelAbbrevs.forEach(abbrev => {
+        const stateElement = svg.querySelector(`#${abbrev}`);
+        if (!stateElement) return;
+
+        try {
+            const stateBox = stateElement.getBoundingClientRect();
+            if (!stateBox.width || !stateBox.height) return;
+
+            const label = document.createElement("span");
+            label.className = "map-state-label";
+            label.dataset.stateLabel = abbrev;
+            label.style.left = `${stateBox.left - svgBox.left + stateBox.width / 2}px`;
+            label.style.top = `${stateBox.top - svgBox.top + stateBox.height / 2}px`;
+            label.textContent = abbrev;
+            labelLayer.appendChild(label);
+        } catch (error) {
+            // Some SVG shapes may not expose a usable box in every browser.
+        }
+    });
 }
 
 function renderTopCompanies(companies) {
@@ -1237,8 +1274,13 @@ document.querySelectorAll(".tab-button").forEach(button => {
             stabilityChart?.resize();
             paretoChart?.resize();
             typesChart?.resize();
+            if (tab === "heatmap") refreshMapLabels();
         }, 50);
     });
+});
+
+window.addEventListener("resize", () => {
+    requestAnimationFrame(refreshMapLabels);
 });
 
 document.addEventListener("mouseover", event => {
