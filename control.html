@@ -303,36 +303,7 @@
                                 <th>Timing</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Goal miss</td>
-                                <td>% defective above 10%</td>
-                                <td>Review Pareto top ASC, validate source data, and assign corrective follow-up.</td>
-                                <td>Process owner</td>
-                                <td>Within 2 business days</td>
-                            </tr>
-                            <tr>
-                                <td>Special cause</td>
-                                <td>Point above UCL or sudden upward run</td>
-                                <td>Open containment review and check recent source-system or workflow changes.</td>
-                                <td>Green Belt / data owner</td>
-                                <td>Same week</td>
-                            </tr>
-                            <tr>
-                                <td>Pareto concentration</td>
-                                <td>Top 3 ASCs drive most defects</td>
-                                <td>Start targeted ASC cleanup instead of broad rework.</td>
-                                <td>ASC owner</td>
-                                <td>Next audit cycle</td>
-                            </tr>
-                            <tr>
-                                <td>Sustainment check</td>
-                                <td>Metric meets goal for 3 consecutive uploads</td>
-                                <td>Keep monitoring cadence and archive evidence for Control Phase signoff.</td>
-                                <td>Project owner</td>
-                                <td>Monthly</td>
-                            </tr>
-                        </tbody>
+                        <tbody id="reactionRows"></tbody>
                     </table>
                 </div>
             </div>
@@ -395,6 +366,7 @@ async function loadControlData() {
     renderStability(data);
     renderPareto(data);
     renderTypes(data);
+    renderReactionPlan(data);
 }
 
 function renderSummary(data) {
@@ -589,6 +561,77 @@ function renderTypes(data) {
             }
         }
     });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function ascListText(pareto, limit = 3) {
+    const top = pareto.slice(0, limit);
+
+    if (!top.length) return "No ASC data loaded yet";
+
+    return top
+        .map(item => `${item.name} (${item.count})`)
+        .join(", ");
+}
+
+function renderReactionPlan(data) {
+    const rows = document.getElementById("reactionRows");
+    const pareto = data.pareto || [];
+    const latest = data.latest || {};
+    const topAsc = pareto[0];
+    const topThree = ascListText(pareto, 3);
+    const latestRate = latest.defect_rate === undefined ? "N/A" : `${fmt(latest.defect_rate, 2)}%`;
+    const topAscName = topAsc ? topAsc.name : "No ASC loaded";
+    const topAscCount = topAsc ? topAsc.count : 0;
+
+    const plan = [
+        {
+            trigger: "Goal miss",
+            condition: `Current defective rate is ${latestRate}; goal is 10%.`,
+            action: `Review ${topAscName} first (${topAscCount} defective PSNs), validate source data, and assign corrective follow-up.`,
+            owner: "Process owner",
+            timing: "Within 2 business days"
+        },
+        {
+            trigger: "Special cause",
+            condition: "Point above UCL or sudden upward run on the Stability tab.",
+            action: `Check whether the shift is concentrated in ${topAscName}; compare recent source-system or workflow changes.`,
+            owner: "Green Belt / data owner",
+            timing: "Same week"
+        },
+        {
+            trigger: "Pareto concentration",
+            condition: `Current top ASCs: ${topThree}.`,
+            action: `Start targeted cleanup for ${topThree} before broad rework.`,
+            owner: "ASC owner",
+            timing: "Next audit cycle"
+        },
+        {
+            trigger: "Sustainment check",
+            condition: "Metric meets goal for 3 consecutive uploads.",
+            action: `Keep monitoring cadence and archive evidence; continue spot checks for ${topAscName}.`,
+            owner: "Project owner",
+            timing: "Monthly"
+        }
+    ];
+
+    rows.innerHTML = plan.map(item => `
+        <tr>
+            <td>${escapeHtml(item.trigger)}</td>
+            <td>${escapeHtml(item.condition)}</td>
+            <td>${escapeHtml(item.action)}</td>
+            <td>${escapeHtml(item.owner)}</td>
+            <td>${escapeHtml(item.timing)}</td>
+        </tr>
+    `).join("");
 }
 
 document.querySelectorAll(".tab-button").forEach(button => {
