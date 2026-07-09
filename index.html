@@ -68,10 +68,27 @@
         }
 
         .upload-row {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 10px;
             align-items: center;
+        }
+
+        .file-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .file-field label {
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .upload-actions {
+            display: flex;
+            align-items: end;
+            height: 100%;
         }
 
         input[type="file"] {
@@ -354,6 +371,14 @@
             gap: 6px;
         }
 
+        .psn-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 140px;
+            overflow: auto;
+        }
+
         .psn-chip {
             display: inline-flex;
             align-items: center;
@@ -417,6 +442,25 @@
             background: #fbfefd;
         }
 
+        .discrepancy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .discrepancy-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 14px;
+        }
+
+        .discrepancy-card h4 {
+            margin: 0 0 8px;
+            color: var(--ink);
+            font-size: 14px;
+        }
+
         @media (min-width: 780px) {
             .charts { grid-template-columns: 1fr 1fr; }
         }
@@ -445,10 +489,19 @@
 
     <section class="panel">
         <div class="upload-row">
-            <input type="file" id="fileInput" accept=".xlsx,.xls">
-            <button id="analyzeButton" onclick="upload()">Analyze</button>
+            <div class="file-field">
+                <label for="trackerInput">Audit Tracker</label>
+                <input type="file" id="trackerInput" accept=".xlsx,.xls">
+            </div>
+            <div class="file-field">
+                <label for="contactInput">Customer Contact List</label>
+                <input type="file" id="contactInput" accept=".xlsx,.xls">
+            </div>
+            <div class="upload-actions">
+                <button id="analyzeButton" onclick="upload()">Analyze</button>
+            </div>
         </div>
-        <div id="status" class="status">Upload the Excel file to calculate the current performance.</div>
+        <div id="status" class="status">Upload both files. SigmaSight will analyze only PSNs marked Yes in the tracker QuInsights column.</div>
     </section>
 
     <section class="panel">
@@ -472,6 +525,8 @@
             <div class="kpi"><h3 id="rate"></h3><p>% Defective</p></div>
             <div class="kpi"><h3 id="dpmo"></h3><p>DPMO</p></div>
             <div class="kpi"><h3 id="sigma"></h3><p>Sigma</p></div>
+            <div class="kpi"><h3 id="yesPsns"></h3><p>Tracker Yes PSNs</p></div>
+            <div class="kpi"><h3 id="matchedPsns"></h3><p>Analyzed PSNs</p></div>
         </div>
     </section>
 
@@ -486,6 +541,8 @@
             <button class="tab-button" data-tab="heatmap">Heatmap</button>
             <button class="tab-button" data-tab="top10">Top 10</button>
             <button class="tab-button" data-tab="defectTable">Table</button>
+            <button class="tab-button" data-tab="auditorDefects">Auditor Defects</button>
+            <button class="tab-button" data-tab="discrepancies">Discrepancies</button>
         </div>
 
         <section id="capability" class="tab-panel active">
@@ -575,6 +632,50 @@
             </div>
         </section>
 
+        <section id="auditorDefects" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Defective PSNs by Auditor</h3>
+                    <span id="auditorSummary"></span>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="state-col">Auditor</th>
+                                <th class="count-col">Count</th>
+                                <th>Defective PSNs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditorRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="discrepancies" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Tracker / Contact List PSN Discrepancies</h3>
+                    <span id="discrepancySummary"></span>
+                </div>
+                <div class="discrepancy-grid">
+                    <div class="discrepancy-card">
+                        <h4>Tracker Yes PSNs missing from contact list</h4>
+                        <div id="missingContactList" class="psn-stack"></div>
+                    </div>
+                    <div class="discrepancy-card">
+                        <h4>Tracker Yes PSNs found but not US contact</h4>
+                        <div id="notAnalyzedList" class="psn-stack"></div>
+                    </div>
+                    <div class="discrepancy-card">
+                        <h4>US contact PSNs not marked Yes in tracker</h4>
+                        <div id="contactNotYesList" class="psn-stack"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </section>
 </main>
 
@@ -638,19 +739,21 @@ function formatSigma(value) {
 }
 
 async function upload() {
-    const file = document.getElementById("fileInput").files[0];
+    const trackerFile = document.getElementById("trackerInput").files[0];
+    const contactFile = document.getElementById("contactInput").files[0];
     const button = document.getElementById("analyzeButton");
 
-    if (!file) {
-        setStatus("Please select an Excel file first.", true);
+    if (!trackerFile || !contactFile) {
+        setStatus("Please select both files: the audit tracker and the customer contact list.", true);
         return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("tracker_file", trackerFile);
+    formData.append("contact_file", contactFile);
 
     button.disabled = true;
-    setStatus("Analyzing file...");
+    setStatus("Analyzing contact list using tracker Yes PSNs...");
 
     try {
         const res = await fetch("/upload", {
@@ -685,6 +788,8 @@ function renderResults(data) {
     document.getElementById("rate").innerText = rate.toFixed(2) + "%";
     document.getElementById("dpmo").innerText = formatNumber(Math.round(data.dpmo));
     document.getElementById("sigma").innerText = formatSigma(sigma);
+    document.getElementById("yesPsns").innerText = formatNumber(data.quinsights_yes_psns);
+    document.getElementById("matchedPsns").innerText = formatNumber(data.matched_psns);
 
     const reduction = baseline.total_defects
         ? ((baseline.total_defects - currentDefects) / baseline.total_defects) * 100
@@ -696,7 +801,7 @@ function renderResults(data) {
 
     const reportDate = data.report_date || "Unknown Report Date";
     document.getElementById("analysisTitle").innerText =
-        "Metric Facts (Report Date - " + reportDate + ")";
+        "Metric Facts (Contact Report Date - " + reportDate + ", filtered by tracker Yes PSNs)";
 
     document.getElementById("current").style.display = "block";
     document.getElementById("dashboardTabs").style.display = "block";
@@ -895,16 +1000,20 @@ function baseOptions() {
 }
 
 async function loadDashboardTabs() {
-    const [controlRes, detailsRes, companiesRes, svgRes] = await Promise.all([
+    const [controlRes, detailsRes, companiesRes, auditorRes, discrepancyRes, svgRes] = await Promise.all([
         fetch("/control-data"),
         fetch("/defects-details"),
         fetch("/top-companies"),
+        fetch("/auditor-defects"),
+        fetch("/psn-discrepancies"),
         fetch("/static/us.svg")
     ]);
 
     const controlData = await controlRes.json();
     const defectDetails = detailsRes.ok ? await detailsRes.json() : {};
     const companies = await companiesRes.json();
+    const auditorDefects = auditorRes.ok ? await auditorRes.json() : [];
+    const discrepancies = discrepancyRes.ok ? await discrepancyRes.json() : {};
     const svgText = await svgRes.text();
 
     renderStability(controlData);
@@ -913,6 +1022,8 @@ async function loadDashboardTabs() {
     renderHeatmap(defectDetails, svgText);
     renderTopCompanies(companies);
     renderDefectTable(defectDetails);
+    renderAuditorDefects(auditorDefects);
+    renderDiscrepancies(discrepancies);
 }
 
 function controlLimits(history) {
@@ -1237,6 +1348,14 @@ function psnChips(items) {
         .join("");
 }
 
+function simplePsnChips(psns) {
+    const list = psns || [];
+    if (!list.length) return `<div class="empty">No PSN discrepancies found.</div>`;
+    return list
+        .map(psn => `<span class="psn-chip">${escapeHtml(psn)}</span>`)
+        .join("");
+}
+
 function renderDefectTable(data) {
     const table = document.getElementById("defectRows");
     const tableSummary = document.getElementById("tableSummary");
@@ -1258,6 +1377,42 @@ function renderDefectTable(data) {
                 </tr>
             `;
         });
+}
+
+function renderAuditorDefects(items) {
+    const table = document.getElementById("auditorRows");
+    const summary = document.getElementById("auditorSummary");
+    const totalDefects = (items || []).reduce((sum, item) => sum + Number(item.count || 0), 0);
+
+    summary.textContent = `${(items || []).length} auditors | ${totalDefects} defective PSNs`;
+    table.innerHTML = "";
+
+    if (!items || !items.length) {
+        table.innerHTML = `<tr><td colspan="3"><div class="empty">No defective PSNs found for the analyzed tracker Yes population.</div></td></tr>`;
+        return;
+    }
+
+    items.forEach(item => {
+        table.innerHTML += `
+            <tr>
+                <td class="state-col">${escapeHtml(item.auditor || "Unknown")}</td>
+                <td class="count-col"><span class="count-badge">${item.count || 0}</span></td>
+                <td><div class="psn-stack">${simplePsnChips(item.psns || [])}</div></td>
+            </tr>
+        `;
+    });
+}
+
+function renderDiscrepancies(data) {
+    const missing = data.tracker_yes_missing_from_contact_list || [];
+    const notAnalyzed = data.tracker_yes_found_but_not_us_contact || [];
+    const contactNotYes = data.contact_us_not_tracker_yes || [];
+    const total = missing.length + notAnalyzed.length + contactNotYes.length;
+
+    document.getElementById("discrepancySummary").textContent = `${total} PSN differences`;
+    document.getElementById("missingContactList").innerHTML = simplePsnChips(missing);
+    document.getElementById("notAnalyzedList").innerHTML = simplePsnChips(notAnalyzed);
+    document.getElementById("contactNotYesList").innerHTML = simplePsnChips(contactNotYes);
 }
 
 document.querySelectorAll(".tab-button").forEach(button => {

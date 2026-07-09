@@ -8,6 +8,7 @@ import math
 import re
 from collections import defaultdict
 from datetime import datetime
+from typing import Optional
 
 app = FastAPI()
 
@@ -23,6 +24,7 @@ COL_COUNTRY = 5
 COL_CONTACTS = 8
 
 US_COUNTRIES = {"UNITED STATES", "USA", "US"}
+YES_VALUES = {"YES", "Y"}
 
 BASELINE = {
     "total": 1630,
@@ -40,6 +42,8 @@ latest_state_details = {}
 latest_companies = []
 latest_company_counts = []
 latest_defect_types = {}
+latest_auditor_defects = []
+latest_discrepancies = {}
 latest_summary = None
 analysis_history = []
 
@@ -155,6 +159,25 @@ def clean_text(value, fallback="Unknown"):
     return text
 
 
+def normalize_header(value):
+    return re.sub(r'[^a-z0-9]', '', str(value).strip().lower())
+
+
+def normalize_psn(value):
+    if pd.isna(value):
+        return ""
+
+    text = str(value).strip()
+
+    if not text or text.lower() in {"nan", "none", "n/a", "na"}:
+        return ""
+
+    if re.fullmatch(r'\d+\.0', text):
+        text = text[:-2]
+
+    return text
+
+
 def evaluate_contacts(blob):
     if pd.isna(blob) or str(blob).strip() == "":
         return True, ["Missing contact details"]
@@ -216,6 +239,80 @@ def extract_report_date(df):
     return f"{now.strftime('%B')} {now.day}, {now.year}"
 
 
+def find_tracker_columns(df):
+    search_rows = min(25, len(df.index))
+
+    for row_index in range(search_rows):
+        auditor_col = None
+        psn_col = None
+        quinsights_col = None
+
+        for col_index in range(len(df.columns)):
+            header = normalize_header(df.iat[row_index, col_index])
+
+            if "assignedauditor" in header or header == "auditor":
+                auditor_col = col_index
+
+            if header == "psn":
+                psn_col = col_index
+
+            if "quinsights" in header and ("updated" in header or "reviewed" in header):
+                quinsights_col = col_index
+
+        if psn_col is not None and quinsights_col is not None:
+            return row_index, psn_col, quinsights_col, auditor_col
+
+    raise HTTPException(
+        status_code=400,
+        detail="The audit tracker must include PSN and QuInsights POC Updated/Reviewed columns.",
+    )
+
+
+def extract_quinsights_yes_psns(tracker_df):
+    header_row, psn_col, quinsights_col, auditor_col = find_tracker_columns(tracker_df)
+    yes_psns = set()
+    tracker_psns = set()
+    yes_psn_details = {}
+
+    for _, row in tracker_df.iloc[header_row + 1:].iterrows():
+        psn = normalize_psn(row[psn_col])
+        if not psn:
+            continue
+
+        tracker_psns.add(psn)
+        status = clean_text(row[quinsights_col], "").strip().upper()
+
+        if status in YES_VALUES:
+            yes_psns.add(psn)
+            yes_psn_details[psn] = {
+                "auditor": clean_text(row[auditor_col]) if auditor_col is not None else "Unknown",
+            }
+
+    if not yes_psns:
+        raise HTTPException(
+            status_code=400,
+            detail="No PSNs with QuInsights POC Updated/Reviewed = Yes were found in the audit tracker.",
+        )
+
+    return yes_psns, yes_psn_details, {
+        "tracker_psns": len(tracker_psns),
+        "quinsights_yes_psns": len(yes_psns),
+    }
+
+
+def build_auditor_defects(auditor_map):
+    rows = []
+
+    for auditor, psns in auditor_map.items():
+        rows.append({
+            "auditor": auditor,
+            "count": len(psns),
+            "psns": sorted(psns, key=str),
+        })
+
+    return sorted(rows, key=lambda item: (-item["count"], item["auditor"]))
+
+
 def erfinv(y):
     a = 0.147
     sign = 1 if y >= 0 else -1
@@ -227,15 +324,29 @@ def erfinv(y):
 
 # ✅ MAIN ENDPOINT
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(
+    contact_file: Optional[UploadFile] = File(None),
+    tracker_file: Optional[UploadFile] = File(None),
+    file: Optional[UploadFile] = File(None),
+):
 
     global latest_state_map, latest_state_details, latest_companies
-    global latest_company_counts, latest_defect_types, latest_summary, analysis_history
+    global latest_company_counts, latest_defect_types, latest_auditor_defects
+    global latest_discrepancies, latest_summary, analysis_history
+
+    selected_contact_file = contact_file or file
+
+    if selected_contact_file is None or tracker_file is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload both files: the audit tracker and the customer contact list.",
+        )
 
     try:
-        df = pd.read_excel(file.file, header=None)
+        tracker_df = pd.read_excel(tracker_file.file, sheet_name=0, header=None)
+        df = pd.read_excel(selected_contact_file.file, header=None)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail="Could not read the uploaded Excel file.") from exc
+        raise HTTPException(status_code=400, detail="Could not read one of the uploaded Excel files.") from exc
 
     if df.shape[1] < REQUIRED_COLUMNS:
         raise HTTPException(
@@ -243,26 +354,42 @@ async def upload(file: UploadFile = File(...)):
             detail=f"Expected at least {REQUIRED_COLUMNS} columns, but found {df.shape[1]}.",
         )
 
+    eligible_psns, yes_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
     report_date = extract_report_date(df)
 
     total = 0
     defective_units = 0
+    contact_us_rows = 0
+    contact_all_psns = set()
+    contact_us_psns = set()
+    matched_psns = set()
 
     state_map = defaultdict(list)
     state_details = defaultdict(list)
     company_map = defaultdict(int)
     defect_type_map = defaultdict(int)
+    auditor_defect_map = defaultdict(list)
 
     for _, row in df.iloc[1:].iterrows():
+        psn = normalize_psn(row[COL_PSN])
+        if psn:
+            contact_all_psns.add(psn)
 
         country = str(row[COL_COUNTRY]).strip().upper()
 
         if country not in US_COUNTRIES:
             continue
 
+        contact_us_rows += 1
+        if psn:
+            contact_us_psns.add(psn)
+
+        if psn not in eligible_psns:
+            continue
+
+        matched_psns.add(psn)
         total += 1
 
-        psn = row[COL_PSN]
         state = clean_state(row[COL_STATE])
 
         raw_company = row[COL_COMPANY]
@@ -276,19 +403,28 @@ async def upload(file: UploadFile = File(...)):
 
         if is_defect:
             defective_units += 1
+            auditor = yes_psn_details.get(psn, {}).get("auditor", "Unknown")
             state_map[state].append(psn)
             state_details[state].append({
-                "psn": clean_text(psn),
+                "psn": psn,
                 "asc_name": asc_name,
                 "city": city,
                 "state": state,
+                "auditor": auditor,
             })
+            auditor_defect_map[auditor].append(psn)
             company_map[company] += 1
             for reason in defect_reasons:
                 defect_type_map[reason] += 1
 
     latest_state_map = dict(state_map)
     latest_state_details = dict(state_details)
+    latest_auditor_defects = build_auditor_defects(auditor_defect_map)
+    latest_discrepancies = {
+        "tracker_yes_missing_from_contact_list": sorted(eligible_psns - contact_all_psns, key=str),
+        "tracker_yes_found_but_not_us_contact": sorted((eligible_psns & contact_all_psns) - contact_us_psns, key=str),
+        "contact_us_not_tracker_yes": sorted(contact_us_psns - eligible_psns, key=str),
+    }
 
     latest_company_counts = sorted(company_map.items(), key=lambda x: x[1], reverse=True)
     latest_companies = latest_company_counts[:10]
@@ -304,6 +440,13 @@ async def upload(file: UploadFile = File(...)):
             "dpmo": 0,
             "sigma": None,
             "report_date": report_date,
+            "contact_us_rows": contact_us_rows,
+            "matched_psns": len(matched_psns),
+            "auditors_with_defects": len(latest_auditor_defects),
+            "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
+            "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),
+            "contact_us_not_tracker_yes": len(latest_discrepancies["contact_us_not_tracker_yes"]),
+            **tracker_meta,
             "baseline": BASELINE,
         }
         return latest_summary
@@ -328,6 +471,13 @@ async def upload(file: UploadFile = File(...)):
         "dpmo": dpmo,
         "sigma": sigma,
         "report_date": report_date,
+        "contact_us_rows": contact_us_rows,
+        "matched_psns": len(matched_psns),
+        "auditors_with_defects": len(latest_auditor_defects),
+        "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
+        "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),
+        "contact_us_not_tracker_yes": len(latest_discrepancies["contact_us_not_tracker_yes"]),
+        **tracker_meta,
         "baseline": BASELINE,
     }
 
@@ -360,6 +510,16 @@ def defects_details():
 @app.get("/top-companies")
 def get_top_companies():
     return latest_companies
+
+
+@app.get("/auditor-defects")
+def auditor_defects():
+    return latest_auditor_defects
+
+
+@app.get("/psn-discrepancies")
+def psn_discrepancies():
+    return latest_discrepancies
 
 
 @app.get("/control-data")

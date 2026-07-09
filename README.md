@@ -2,7 +2,12 @@
 
 SigmaSightExtra is a FastAPI dashboard for Six Sigma contact-data quality analysis.
 
-It accepts an Excel file, filters for US records, checks whether each PSN has usable contact information, then reports:
+It accepts two Excel files:
+
+- Audit tracker
+- Customer contact list
+
+The audit tracker is used first as a filter. SigmaSightExtra only analyzes PSNs where `QuInsights POC Updated/Reviewed` is marked `Yes`. It then checks those matching US customer-contact rows for usable contact information and reports:
 
 - Total units
 - Defective units
@@ -12,10 +17,12 @@ It accepts an Excel file, filters for US records, checks whether each PSN has us
 - Sigma level
 - Defective PSNs by state
 - Top 10 companies by defective PSNs
+- Defective PSNs by assigned auditor
+- PSN discrepancies between the tracker and contact list
 
 ## Expected Excel Layout
 
-The app currently expects these columns:
+The customer contact list expects these columns:
 
 | Column | Meaning |
 | --- | --- |
@@ -24,6 +31,13 @@ The app currently expects these columns:
 | E | State |
 | F | Country |
 | I | Contact details |
+
+The audit tracker must include:
+
+| Column | Meaning |
+| --- | --- |
+| PSN | PSN to match against the contact list |
+| QuInsights POC Updated/Reviewed | Only rows marked `Yes` are analyzed |
 
 The contact-details field is checked for sections such as:
 
@@ -49,7 +63,7 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-After analysis, the dashboard shows Control Phase tabs for Capability, Stability, Pareto, Defect Types, Heatmap, Top 10, Table, and Reaction Plan.
+After analysis, the dashboard shows Control Phase tabs for Capability, Stability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, and Discrepancies.
 
 ## Improvements From Original
 
