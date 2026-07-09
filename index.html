@@ -74,6 +74,63 @@
             align-items: center;
         }
 
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-flex;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+            transition: 0.2s;
+        }
+
+        .switch input:checked + .slider {
+            background: var(--accent);
+        }
+
+        .switch input:checked + .slider::before {
+            transform: translateX(22px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         .file-field {
             display: grid;
             gap: 6px;
@@ -488,8 +545,15 @@
     </header>
 
     <section class="panel">
+        <label class="filter-toggle">
+            <span class="switch">
+                <input type="checkbox" id="trackerToggle" checked>
+                <span class="slider"></span>
+            </span>
+            <span>Use audit tracker filter</span>
+        </label>
         <div class="upload-row">
-            <div class="file-field">
+            <div class="file-field" id="trackerField">
                 <label for="trackerInput">Audit Tracker</label>
                 <input type="file" id="trackerInput" accept=".xlsx,.xls">
             </div>
@@ -739,21 +803,30 @@ function formatSigma(value) {
 }
 
 async function upload() {
+    const useTrackerFilter = document.getElementById("trackerToggle").checked;
     const trackerFile = document.getElementById("trackerInput").files[0];
     const contactFile = document.getElementById("contactInput").files[0];
     const button = document.getElementById("analyzeButton");
 
-    if (!trackerFile || !contactFile) {
-        setStatus("Please select both files: the audit tracker and the customer contact list.", true);
+    if (!contactFile) {
+        setStatus("Please select the customer contact list.", true);
+        return;
+    }
+
+    if (useTrackerFilter && !trackerFile) {
+        setStatus("Please select the audit tracker or turn off the tracker filter.", true);
         return;
     }
 
     const formData = new FormData();
-    formData.append("tracker_file", trackerFile);
+    formData.append("use_tracker_filter", useTrackerFilter ? "true" : "false");
+    if (useTrackerFilter) {
+        formData.append("tracker_file", trackerFile);
+    }
     formData.append("contact_file", contactFile);
 
     button.disabled = true;
-    setStatus("Analyzing contact list using tracker Yes PSNs...");
+    setStatus(useTrackerFilter ? "Analyzing contact list using tracker Yes PSNs..." : "Analyzing full US contact list...");
 
     try {
         const res = await fetch("/upload", {
@@ -788,7 +861,7 @@ function renderResults(data) {
     document.getElementById("rate").innerText = rate.toFixed(2) + "%";
     document.getElementById("dpmo").innerText = formatNumber(Math.round(data.dpmo));
     document.getElementById("sigma").innerText = formatSigma(sigma);
-    document.getElementById("yesPsns").innerText = formatNumber(data.quinsights_yes_psns);
+    document.getElementById("yesPsns").innerText = data.use_tracker_filter ? formatNumber(data.quinsights_yes_psns) : "Off";
     document.getElementById("matchedPsns").innerText = formatNumber(data.matched_psns);
 
     const reduction = baseline.total_defects
@@ -801,7 +874,11 @@ function renderResults(data) {
 
     const reportDate = data.report_date || "Unknown Report Date";
     document.getElementById("analysisTitle").innerText =
-        "Metric Facts (Contact Report Date - " + reportDate + ", filtered by tracker Yes PSNs)";
+        data.use_tracker_filter
+            ? "Metric Facts (Contact Report Date - " + reportDate + ", filtered by tracker Yes PSNs)"
+            : "Metric Facts (Contact Report Date - " + reportDate + ", full US contact list)";
+
+    setTrackerTabsVisible(data.use_tracker_filter);
 
     document.getElementById("current").style.display = "block";
     document.getElementById("dashboardTabs").style.display = "block";
@@ -809,6 +886,18 @@ function renderResults(data) {
 
     drawCharts(baseline, rate, sigma);
     loadDashboardTabs();
+}
+
+function setTrackerTabsVisible(isVisible) {
+    document.querySelector('[data-tab="auditorDefects"]').classList.toggle("hidden", !isVisible);
+    document.querySelector('[data-tab="discrepancies"]').classList.toggle("hidden", !isVisible);
+
+    if (!isVisible) {
+        const activeTrackerTab = document.querySelector("#auditorDefects.active, #discrepancies.active");
+        if (activeTrackerTab) {
+            document.querySelector('[data-tab="capability"]').click();
+        }
+    }
 }
 
 function drawCharts(baseline, rate, sigma) {
@@ -1414,6 +1503,19 @@ function renderDiscrepancies(data) {
     document.getElementById("notAnalyzedList").innerHTML = simplePsnChips(notAnalyzed);
     document.getElementById("contactNotYesList").innerHTML = simplePsnChips(contactNotYes);
 }
+
+function updateTrackerFilterUi() {
+    const useTrackerFilter = document.getElementById("trackerToggle").checked;
+    document.getElementById("trackerField").classList.toggle("hidden", !useTrackerFilter);
+    setStatus(
+        useTrackerFilter
+            ? "Upload both files. SigmaSight will analyze only PSNs marked Yes in the tracker QuInsights column."
+            : "Upload the customer contact list. SigmaSight will analyze the full US contact list."
+    );
+}
+
+document.getElementById("trackerToggle").addEventListener("change", updateTrackerFilterUi);
+updateTrackerFilterUi();
 
 document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", () => {

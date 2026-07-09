@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
@@ -43,7 +43,11 @@ latest_companies = []
 latest_company_counts = []
 latest_defect_types = {}
 latest_auditor_defects = []
-latest_discrepancies = {}
+latest_discrepancies = {
+    "tracker_yes_missing_from_contact_list": [],
+    "tracker_yes_found_but_not_us_contact": [],
+    "contact_us_not_tracker_yes": [],
+}
 latest_summary = None
 analysis_history = []
 
@@ -328,6 +332,7 @@ async def upload(
     contact_file: Optional[UploadFile] = File(None),
     tracker_file: Optional[UploadFile] = File(None),
     file: Optional[UploadFile] = File(None),
+    use_tracker_filter: bool = Form(True),
 ):
 
     global latest_state_map, latest_state_details, latest_companies
@@ -336,14 +341,20 @@ async def upload(
 
     selected_contact_file = contact_file or file
 
-    if selected_contact_file is None or tracker_file is None:
+    if selected_contact_file is None:
         raise HTTPException(
             status_code=400,
-            detail="Please upload both files: the audit tracker and the customer contact list.",
+            detail="Please upload the customer contact list.",
+        )
+
+    if use_tracker_filter and tracker_file is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Please upload the audit tracker or turn off the tracker filter.",
         )
 
     try:
-        tracker_df = pd.read_excel(tracker_file.file, sheet_name=0, header=None)
+        tracker_df = pd.read_excel(tracker_file.file, sheet_name=0, header=None) if use_tracker_filter else None
         df = pd.read_excel(selected_contact_file.file, header=None)
     except Exception as exc:
         raise HTTPException(status_code=400, detail="Could not read one of the uploaded Excel files.") from exc
@@ -354,7 +365,16 @@ async def upload(
             detail=f"Expected at least {REQUIRED_COLUMNS} columns, but found {df.shape[1]}.",
         )
 
-    eligible_psns, yes_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
+    if use_tracker_filter:
+        eligible_psns, yes_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
+    else:
+        eligible_psns = None
+        yes_psn_details = {}
+        tracker_meta = {
+            "tracker_psns": None,
+            "quinsights_yes_psns": None,
+        }
+
     report_date = extract_report_date(df)
 
     total = 0
@@ -384,7 +404,7 @@ async def upload(
         if psn:
             contact_us_psns.add(psn)
 
-        if psn not in eligible_psns:
+        if eligible_psns is not None and psn not in eligible_psns:
             continue
 
         matched_psns.add(psn)
@@ -412,7 +432,8 @@ async def upload(
                 "state": state,
                 "auditor": auditor,
             })
-            auditor_defect_map[auditor].append(psn)
+            if use_tracker_filter:
+                auditor_defect_map[auditor].append(psn)
             company_map[company] += 1
             for reason in defect_reasons:
                 defect_type_map[reason] += 1
@@ -420,11 +441,18 @@ async def upload(
     latest_state_map = dict(state_map)
     latest_state_details = dict(state_details)
     latest_auditor_defects = build_auditor_defects(auditor_defect_map)
-    latest_discrepancies = {
-        "tracker_yes_missing_from_contact_list": sorted(eligible_psns - contact_all_psns, key=str),
-        "tracker_yes_found_but_not_us_contact": sorted((eligible_psns & contact_all_psns) - contact_us_psns, key=str),
-        "contact_us_not_tracker_yes": sorted(contact_us_psns - eligible_psns, key=str),
-    }
+    if use_tracker_filter:
+        latest_discrepancies = {
+            "tracker_yes_missing_from_contact_list": sorted(eligible_psns - contact_all_psns, key=str),
+            "tracker_yes_found_but_not_us_contact": sorted((eligible_psns & contact_all_psns) - contact_us_psns, key=str),
+            "contact_us_not_tracker_yes": sorted(contact_us_psns - eligible_psns, key=str),
+        }
+    else:
+        latest_discrepancies = {
+            "tracker_yes_missing_from_contact_list": [],
+            "tracker_yes_found_but_not_us_contact": [],
+            "contact_us_not_tracker_yes": [],
+        }
 
     latest_company_counts = sorted(company_map.items(), key=lambda x: x[1], reverse=True)
     latest_companies = latest_company_counts[:10]
@@ -440,6 +468,7 @@ async def upload(
             "dpmo": 0,
             "sigma": None,
             "report_date": report_date,
+            "use_tracker_filter": use_tracker_filter,
             "contact_us_rows": contact_us_rows,
             "matched_psns": len(matched_psns),
             "auditors_with_defects": len(latest_auditor_defects),
@@ -471,6 +500,7 @@ async def upload(
         "dpmo": dpmo,
         "sigma": sigma,
         "report_date": report_date,
+        "use_tracker_filter": use_tracker_filter,
         "contact_us_rows": contact_us_rows,
         "matched_psns": len(matched_psns),
         "auditors_with_defects": len(latest_auditor_defects),

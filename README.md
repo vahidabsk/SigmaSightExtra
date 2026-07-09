@@ -2,12 +2,16 @@
 
 SigmaSightExtra is a FastAPI dashboard for Six Sigma contact-data quality analysis.
 
-It accepts two Excel files:
+It can run in two modes.
+
+With the audit tracker filter on, it accepts two Excel files:
 
 - Audit tracker
 - Customer contact list
 
 The audit tracker is used first as a filter. SigmaSightExtra only analyzes PSNs where `QuInsights POC Updated/Reviewed` is marked `Yes`. It then checks those matching US customer-contact rows for usable contact information and reports:
+
+With the audit tracker filter off, it accepts only the customer contact list and analyzes all US contact-list rows.
 
 - Total units
 - Defective units
