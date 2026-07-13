@@ -67,7 +67,7 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-After analysis, the dashboard shows Control Phase tabs for Capability, Stability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, and Discrepancies.
+After analysis, the dashboard shows Control Phase tabs for Capability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, and Discrepancies.
 
 ## Improvements From Original
 

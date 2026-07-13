@@ -144,6 +144,7 @@
 
         .upload-actions {
             display: flex;
+            gap: 8px;
             align-items: end;
             height: 100%;
         }
@@ -185,6 +186,34 @@
         .section-title {
             font-weight: 800;
             margin-bottom: 12px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .section-header .section-title {
+            margin-bottom: 0;
+        }
+
+        .info-button {
+            border: 1px solid var(--line);
+            background: #ffffff;
+            color: var(--accent-dark);
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .info-button:hover {
+            border-color: var(--accent);
+            background: #eef8f6;
         }
 
         .kpi-grid {
@@ -284,6 +313,12 @@
             font-size: 12px;
             font-weight: 700;
             white-space: nowrap;
+        }
+
+        .heading-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .chart-frame {
@@ -518,6 +553,66 @@
             font-size: 14px;
         }
 
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.32);
+            z-index: 50;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .info-modal {
+            width: min(440px, 100%);
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+            padding: 18px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--ink);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: var(--ink);
+        }
+
+        .modal-body {
+            color: var(--ink);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .modal-body ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
+        }
+
         @media (min-width: 780px) {
             .charts { grid-template-columns: 1fr 1fr; }
         }
@@ -527,6 +622,11 @@
             main { padding: 14px; }
             h1 { font-size: 26px; }
             button { width: 100%; }
+            .upload-actions { display: grid; }
+            .section-header,
+            .chart-heading,
+            .table-header { align-items: stretch; flex-direction: column; }
+            .heading-actions { align-items: stretch; flex-direction: column; }
             .map-layout { grid-template-columns: 1fr; }
             #map-container svg { height: auto; }
             .state-col { width: 110px; }
@@ -563,13 +663,17 @@
             </div>
             <div class="upload-actions">
                 <button id="analyzeButton" onclick="upload()">Analyze</button>
+                <button type="button" class="info-button" data-info="analysis">How SigmaSight analyzes files</button>
             </div>
         </div>
         <div id="status" class="status">Upload both files. SigmaSight will analyze only PSNs marked Yes in the tracker QuInsights column.</div>
     </section>
 
     <section class="panel">
-        <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
+        <div class="section-header">
+            <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
+            <button type="button" class="info-button" data-info="baseline">How calculated</button>
+        </div>
         <div class="kpi-grid">
             <div class="kpi"><h3>1,630</h3><p>Total Units</p></div>
             <div class="kpi"><h3>564</h3><p>Defective Units</p></div>
@@ -581,7 +685,10 @@
     </section>
 
     <section id="current" class="panel" style="display:none;">
-        <div class="section-title" id="analysisTitle"></div>
+        <div class="section-header">
+            <div class="section-title" id="analysisTitle"></div>
+            <button type="button" class="info-button" data-info="metrics">How calculated</button>
+        </div>
         <div class="kpi-grid">
             <div class="kpi"><h3 id="units"></h3><p>Total Units</p></div>
             <div class="kpi"><h3 id="defUnits"></h3><p>Defective Units</p></div>
@@ -599,7 +706,6 @@
     <section id="dashboardTabs" class="panel" style="display:none;">
         <div class="tabs" role="tablist" aria-label="Dashboard views">
             <button class="tab-button active" data-tab="capability">Capability</button>
-            <button class="tab-button" data-tab="stability">Stability</button>
             <button class="tab-button" data-tab="pareto">Pareto</button>
             <button class="tab-button" data-tab="types">Defect Types</button>
             <button class="tab-button" data-tab="heatmap">Heatmap</button>
@@ -614,27 +720,23 @@
                 <div class="chart-card">
                     <div class="chart-heading">
                         <h3>Sigma Capability</h3>
-                        <span>Goal: 2.8</span>
+                        <div class="heading-actions">
+                            <span>Goal: 2.8</span>
+                            <button type="button" class="info-button" data-info="sigma">How calculated</button>
+                        </div>
                     </div>
                     <div class="chart-frame"><canvas id="zChart"></canvas></div>
                 </div>
                 <div class="chart-card">
                     <div class="chart-heading">
                         <h3>Defective Rate</h3>
-                        <span>Goal: 10%</span>
+                        <div class="heading-actions">
+                            <span>Goal: 10%</span>
+                            <button type="button" class="info-button" data-info="defective-rate">How calculated</button>
+                        </div>
                     </div>
                     <div class="chart-frame"><canvas id="defChart"></canvas></div>
                 </div>
-            </div>
-        </section>
-
-        <section id="stability" class="tab-panel">
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Stability: % Defective Over Time</h3>
-                    <span>Center line, UCL, LCL, and goal</span>
-                </div>
-                <div class="chart-frame"><canvas id="stabilityChart"></canvas></div>
             </div>
         </section>
 
@@ -642,7 +744,10 @@
             <div class="chart-card">
                 <div class="chart-heading">
                     <h3>Pareto: Top ASC Defect Contributors</h3>
-                    <span>Count and cumulative %</span>
+                    <div class="heading-actions">
+                        <span>Count and cumulative %</span>
+                        <button type="button" class="info-button" data-info="pareto">How calculated</button>
+                    </div>
                 </div>
                 <div class="chart-frame"><canvas id="paretoChart"></canvas></div>
             </div>
@@ -652,7 +757,10 @@
             <div class="chart-card">
                 <div class="chart-heading">
                     <h3>Defect Types</h3>
-                    <span>Detected from contact fields</span>
+                    <div class="heading-actions">
+                        <span>Detected from contact fields</span>
+                        <button type="button" class="info-button" data-info="defect-types">How calculated</button>
+                    </div>
                 </div>
                 <div class="chart-frame"><canvas id="typesChart"></canvas></div>
             </div>
@@ -662,7 +770,10 @@
             <div class="chart-card">
                 <div class="chart-heading">
                     <h3>Defective PSNs Heatmap</h3>
-                    <span>US states colored by defect count</span>
+                    <div class="heading-actions">
+                        <span>US states colored by defect count</span>
+                        <button type="button" class="info-button" data-info="heatmap">How calculated</button>
+                    </div>
                 </div>
                 <div id="map-container"></div>
             </div>
@@ -670,7 +781,10 @@
 
         <section id="top10" class="tab-panel">
             <div class="side-panel">
-                <h3>Top 10 ASCs</h3>
+                <div class="table-header">
+                    <h3>Top 10 ASCs</h3>
+                    <button type="button" class="info-button" data-info="top10">How calculated</button>
+                </div>
                 <div id="companyList"></div>
             </div>
         </section>
@@ -679,7 +793,10 @@
             <div class="table-panel">
                 <div class="table-header">
                     <h3>Defective PSNs by State</h3>
-                    <span id="tableSummary"></span>
+                    <div class="heading-actions">
+                        <span id="tableSummary"></span>
+                        <button type="button" class="info-button" data-info="defect-table">How calculated</button>
+                    </div>
                 </div>
                 <div class="table-scroll">
                     <table>
@@ -700,7 +817,10 @@
             <div class="table-panel">
                 <div class="table-header">
                     <h3>Defective PSNs by Auditor</h3>
-                    <span id="auditorSummary"></span>
+                    <div class="heading-actions">
+                        <span id="auditorSummary"></span>
+                        <button type="button" class="info-button" data-info="auditor-defects">How calculated</button>
+                    </div>
                 </div>
                 <div class="table-scroll">
                     <table>
@@ -721,7 +841,10 @@
             <div class="table-panel">
                 <div class="table-header">
                     <h3>Tracker / Contact List PSN Discrepancies</h3>
-                    <span id="discrepancySummary"></span>
+                    <div class="heading-actions">
+                        <span id="discrepancySummary"></span>
+                        <button type="button" class="info-button" data-info="discrepancies">How calculated</button>
+                    </div>
                 </div>
                 <div class="discrepancy-grid">
                     <div class="discrepancy-card">
@@ -744,49 +867,22 @@
 </main>
 
 <div id="psnTooltip" class="psn-tooltip"></div>
+<div id="infoBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+        <div class="modal-header">
+            <h3 id="infoTitle"></h3>
+            <button type="button" class="modal-close" onclick="closeInfoModal()">X</button>
+        </div>
+        <div id="infoBody" class="modal-body"></div>
+    </div>
+</div>
 
 <script>
 let zChart;
 let defChart;
-let stabilityChart;
 let paretoChart;
 let typesChart;
 let mapLabelAbbrevs = [];
-
-const controlLinePlugin = {
-    id: "controlLinePlugin",
-    afterDatasetsDraw(chart) {
-        const lines = chart.options.plugins?.controlLines;
-        if (!lines || !lines.length) return;
-
-        const { ctx, chartArea, scales } = chart;
-        if (!chartArea || !scales.y) return;
-
-        ctx.save();
-        lines.forEach(line => {
-            const y = scales.y.getPixelForValue(line.value);
-            if (!Number.isFinite(y) || y < chartArea.top || y > chartArea.bottom) return;
-
-            ctx.beginPath();
-            ctx.setLineDash(line.dash || []);
-            ctx.lineWidth = line.width || 2;
-            ctx.strokeStyle = line.color;
-            ctx.moveTo(chartArea.left, y);
-            ctx.lineTo(chartArea.right, y);
-            ctx.stroke();
-
-            ctx.setLineDash([]);
-            ctx.font = "700 12px Arial";
-            ctx.fillStyle = line.color;
-            ctx.textAlign = "right";
-            ctx.textBaseline = "bottom";
-            ctx.fillText(line.label, chartArea.right - 6, y - 4);
-        });
-        ctx.restore();
-    }
-};
-
-Chart.register(controlLinePlugin);
 
 function setStatus(message, isError = false) {
     const status = document.getElementById("status");
@@ -1105,7 +1201,6 @@ async function loadDashboardTabs() {
     const discrepancies = discrepancyRes.ok ? await discrepancyRes.json() : {};
     const svgText = await svgRes.text();
 
-    renderStability(controlData);
     renderPareto(controlData);
     renderTypes(controlData);
     renderHeatmap(defectDetails, svgText);
@@ -1113,112 +1208,6 @@ async function loadDashboardTabs() {
     renderDefectTable(defectDetails);
     renderAuditorDefects(auditorDefects);
     renderDiscrepancies(discrepancies);
-}
-
-function controlLimits(history) {
-    const totalUnits = history.reduce((sum, run) => sum + run.total, 0);
-    const totalDefective = history.reduce((sum, run) => sum + run.defective_units, 0);
-    const pbar = totalUnits ? totalDefective / totalUnits : 0;
-
-    return history.map(run => {
-        const sigma = run.total ? Math.sqrt((pbar * (1 - pbar)) / run.total) : 0;
-        return {
-            cl: pbar * 100,
-            ucl: Math.min(100, (pbar + 3 * sigma) * 100),
-            lcl: Math.max(0, (pbar - 3 * sigma) * 100),
-        };
-    });
-}
-
-function renderStability(data) {
-    const history = data.history || [];
-    const labels = history.map((run, index) => run.label || `Run ${index + 1}`);
-    const limits = controlLimits(history);
-    const latestLimit = limits[limits.length - 1] || { cl: 0, ucl: 0, lcl: 0 };
-
-    if (stabilityChart) stabilityChart.destroy();
-    stabilityChart = new Chart(document.getElementById("stabilityChart"), {
-        type: "line",
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: "% Defective",
-                    data: history.map(run => run.defect_rate),
-                    borderColor: "#7c3aed",
-                    backgroundColor: "#7c3aed",
-                    pointBackgroundColor: "#7c3aed",
-                    pointBorderColor: "#ffffff",
-                    pointBorderWidth: 4,
-                    pointRadius: 8,
-                    pointHoverRadius: 10,
-                    tension: 0.25
-                },
-                {
-                    label: "Center Line",
-                    data: limits.map(limit => limit.cl),
-                    borderColor: "#0f766e",
-                    backgroundColor: "#0f766e",
-                    borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 5
-                },
-                {
-                    label: "UCL",
-                    data: limits.map(limit => limit.ucl),
-                    borderColor: "#dc2626",
-                    backgroundColor: "#dc2626",
-                    borderWidth: 2,
-                    borderDash: [6, 4],
-                    pointRadius: 4,
-                    pointHoverRadius: 5
-                },
-                {
-                    label: "LCL",
-                    data: limits.map(limit => limit.lcl),
-                    borderColor: "#94a3b8",
-                    backgroundColor: "#94a3b8",
-                    borderWidth: 2,
-                    borderDash: [6, 4],
-                    pointRadius: 4,
-                    pointHoverRadius: 5
-                },
-                {
-                    label: "Goal (10%)",
-                    data: history.map(() => 10),
-                    borderColor: "#f97316",
-                    backgroundColor: "#f97316",
-                    borderWidth: 3,
-                    borderDash: [4, 4],
-                    pointRadius: 4,
-                    pointHoverRadius: 5
-                }
-            ]
-        },
-        options: {
-            ...baseOptions(),
-            plugins: {
-                ...baseOptions().plugins,
-                controlLines: [
-                    { label: `UCL ${latestLimit.ucl.toFixed(1)}%`, value: latestLimit.ucl, color: "#dc2626", dash: [7, 5], width: 3 },
-                    { label: `Center ${latestLimit.cl.toFixed(1)}%`, value: latestLimit.cl, color: "#0f766e", width: 3 },
-                    { label: `LCL ${latestLimit.lcl.toFixed(1)}%`, value: latestLimit.lcl, color: "#64748b", dash: [7, 5], width: 3 },
-                    { label: "Goal 10%", value: 10, color: "#f97316", dash: [4, 4], width: 3 }
-                ]
-            },
-            scales: {
-                ...baseOptions().scales,
-                y: {
-                    ...baseOptions().scales.y,
-                    suggestedMax: Math.max(20, ...history.map(run => run.defect_rate + 8), ...limits.map(limit => limit.ucl + 4)),
-                    ticks: {
-                        ...baseOptions().scales.y.ticks,
-                        callback: value => `${value}%`
-                    }
-                }
-            }
-        }
-    });
 }
 
 function renderPareto(data) {
@@ -1504,6 +1493,178 @@ function renderDiscrepancies(data) {
     document.getElementById("contactNotYesList").innerHTML = simplePsnChips(contactNotYes);
 }
 
+const infoContent = {
+    analysis: {
+        title: "How SigmaSight Analyzes Files",
+        body: `
+            <p>SigmaSight reads the uploaded Excel file rows and cleans blank, NA, N/A, None, and decimal-looking PSNs before matching.</p>
+            <ul>
+                <li>When the tracker filter is on, it first finds PSNs where QuInsights POC Updated/Reviewed is Yes.</li>
+                <li>It then analyzes only matching United States contact-list rows.</li>
+                <li>When the tracker filter is off, it analyzes every United States row in the contact list.</li>
+                <li>For each PSN, the Contacts field is split into contact sections such as Primary, Secondary, Site Contact, or Oracle.</li>
+                <li>A row is good when at least one contact section has a valid name, phone, and email.</li>
+            </ul>
+        `
+    },
+    baseline: {
+        title: "Baseline Metric Facts",
+        body: `
+            <p>The baseline is the original project starting point from July 21, 2025. It is kept fixed so every new upload compares against the same starting performance.</p>
+            <ul>
+                <li>Total Units: 1,630</li>
+                <li>Defective Units: 564</li>
+                <li>Total Defects: defective units x 3 opportunities</li>
+                <li>% Defective: defective units divided by total units</li>
+                <li>DPMO: defect rate converted to defects per million opportunities</li>
+            </ul>
+        `
+    },
+    metrics: {
+        title: "Current Metric Facts",
+        body: `
+            <p>Current metrics are calculated from the rows included in the selected analysis mode.</p>
+            <ul>
+                <li>Total Units: analyzed US PSNs.</li>
+                <li>Defective Units: analyzed PSNs where no contact section has valid name, phone, and email.</li>
+                <li>Total Defects: defective units x 3 contact opportunities.</li>
+                <li>% Defective: defective units divided by total units.</li>
+                <li>DPMO: % defective converted to defects per million opportunities.</li>
+                <li>Sigma: calculated from the defect probability, with the 1.5 sigma shift.</li>
+            </ul>
+        `
+    },
+    sigma: {
+        title: "Sigma Capability",
+        body: `
+            <p>SigmaSight converts the defect probability into a short-term sigma estimate.</p>
+            <ul>
+                <li>Defect probability = defective units / total units.</li>
+                <li>The app converts that probability through the inverse normal calculation.</li>
+                <li>Then it adds the standard 1.5 sigma shift used in Six Sigma reporting.</li>
+                <li>The chart compares baseline sigma against current sigma and shows the 2.8 goal line.</li>
+            </ul>
+        `
+    },
+    "defective-rate": {
+        title: "Defective Rate",
+        body: `
+            <p>The defective rate is the share of analyzed PSNs that fail the contact-quality rule.</p>
+            <ul>
+                <li>Formula: defective units / total analyzed units x 100.</li>
+                <li>A PSN is defective when the Contacts field is empty or no parsed contact section has valid name, phone, and email.</li>
+                <li>The chart compares baseline defective rate against current defective rate and shows the 10% goal line.</li>
+            </ul>
+        `
+    },
+    pareto: {
+        title: "Pareto",
+        body: `
+            <p>The Pareto chart groups defective PSNs by ASC/company name.</p>
+            <ul>
+                <li>Company names are normalized by removing punctuation and common company words like LLC, Inc, Corp, Company, Group, Systems, and Solutions.</li>
+                <li>The bars show the top defect contributors by count.</li>
+                <li>The orange line shows cumulative percentage so you can see where the largest contributors are concentrated.</li>
+            </ul>
+        `
+    },
+    "defect-types": {
+        title: "Defect Types",
+        body: `
+            <p>Defect types come from the failed contact fields inside each contact section.</p>
+            <ul>
+                <li>Missing name is counted when a contact name is blank or NA.</li>
+                <li>Missing or invalid phone is counted when there are fewer than 7 digits.</li>
+                <li>Missing or invalid email is counted when the email pattern is not found.</li>
+            </ul>
+        `
+    },
+    heatmap: {
+        title: "Heatmap",
+        body: `
+            <p>The heatmap counts defective PSNs by state.</p>
+            <ul>
+                <li>Only defective analyzed PSNs are included.</li>
+                <li>Darker states have more defective PSNs.</li>
+                <li>Hovering a state shows the state name and defective PSN count.</li>
+            </ul>
+        `
+    },
+    top10: {
+        title: "Top 10 ASCs",
+        body: `
+            <p>This list shows the ASCs/companies with the highest count of defective PSNs in the analyzed population.</p>
+            <ul>
+                <li>Only defective PSNs are counted.</li>
+                <li>Names are cleaned so similar legal names group together more consistently.</li>
+                <li>The list is sorted from highest defect count to lowest.</li>
+            </ul>
+        `
+    },
+    "defect-table": {
+        title: "Defective PSNs by State",
+        body: `
+            <p>This table lists every defective analyzed PSN grouped by state.</p>
+            <ul>
+                <li>The count is the number of defective PSNs in that state.</li>
+                <li>Hover a PSN chip to see PSN, ASC name, city, and state.</li>
+                <li>When the tracker filter is on, only tracker Yes PSNs are eligible.</li>
+            </ul>
+        `
+    },
+    "auditor-defects": {
+        title: "Defective PSNs by Auditor",
+        body: `
+            <p>This result is available when the tracker filter is on.</p>
+            <ul>
+                <li>SigmaSight takes the assigned auditor from the tracker row for each Yes PSN.</li>
+                <li>If that PSN is defective in the contact list, it is counted under that auditor.</li>
+                <li>The PSN list shows exactly which defective units belong to each auditor.</li>
+            </ul>
+        `
+    },
+    discrepancies: {
+        title: "PSN Discrepancies",
+        body: `
+            <p>This result compares tracker Yes PSNs against the contact list.</p>
+            <ul>
+                <li>Tracker Yes PSNs missing from contact list: Yes in tracker, not found anywhere in the contact list.</li>
+                <li>Tracker Yes PSNs found but not US contact: found in contact list but not as a United States row.</li>
+                <li>US contact PSNs not marked Yes in tracker: US contact-list PSNs that were not included in the tracker Yes population.</li>
+            </ul>
+        `
+    }
+};
+
+function openInfoModal(key) {
+    const content = infoContent[key];
+    if (!content) return;
+
+    document.getElementById("infoTitle").textContent = content.title;
+    document.getElementById("infoBody").innerHTML = content.body;
+    const backdrop = document.getElementById("infoBackdrop");
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+}
+
+function closeInfoModal() {
+    const backdrop = document.getElementById("infoBackdrop");
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+}
+
+document.querySelectorAll("[data-info]").forEach(button => {
+    button.addEventListener("click", () => openInfoModal(button.dataset.info));
+});
+
+document.getElementById("infoBackdrop").addEventListener("click", event => {
+    if (event.target.id === "infoBackdrop") closeInfoModal();
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeInfoModal();
+});
+
 function updateTrackerFilterUi() {
     const useTrackerFilter = document.getElementById("trackerToggle").checked;
     document.getElementById("trackerField").classList.toggle("hidden", !useTrackerFilter);
@@ -1528,7 +1689,6 @@ document.querySelectorAll(".tab-button").forEach(button => {
         setTimeout(() => {
             zChart?.resize();
             defChart?.resize();
-            stabilityChart?.resize();
             paretoChart?.resize();
             typesChart?.resize();
             if (tab === "heatmap") refreshMapLabels();
