@@ -216,6 +216,36 @@
             background: #eef8f6;
         }
 
+        .formula-button {
+            border: 1px solid #cfe7e3;
+            background: #ffffff;
+            color: var(--accent-dark);
+            border-radius: 999px;
+            padding: 4px 7px;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .formula-button:hover {
+            border-color: var(--accent);
+            background: #eef8f6;
+        }
+
+        .formula {
+            display: block;
+            margin: 8px 0;
+            padding: 9px 10px;
+            border: 1px solid #d7dee8;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: #0f172a;
+            font-family: Menlo, Consolas, monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
@@ -228,6 +258,13 @@
             padding: 12px;
             min-height: 92px;
             background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
+        }
+
+        .kpi-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
         }
 
         .kpi h3 {
@@ -672,32 +709,32 @@
     <section class="panel">
         <div class="section-header">
             <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
-            <button type="button" class="info-button" data-info="baseline">How calculated</button>
+            <button type="button" class="info-button" data-info="baseline">All formulas</button>
         </div>
         <div class="kpi-grid">
-            <div class="kpi"><h3>1,630</h3><p>Total Units</p></div>
-            <div class="kpi"><h3>564</h3><p>Defective Units</p></div>
-            <div class="kpi"><h3>1,692</h3><p>Total Defects</p></div>
-            <div class="kpi"><h3>34.60%</h3><p>% Defective</p></div>
-            <div class="kpi"><h3>346,012</h3><p>DPMO</p></div>
-            <div class="kpi"><h3>1.90</h3><p>Sigma</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1,630</h3><button type="button" class="formula-button" data-info="total-units">Formula</button></div><p>Total Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>564</h3><button type="button" class="formula-button" data-info="defective-units">Formula</button></div><p>Defective Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1,692</h3><button type="button" class="formula-button" data-info="total-defects">Formula</button></div><p>Total Defects</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>34.60%</h3><button type="button" class="formula-button" data-info="percent-defective">Formula</button></div><p>% Defective</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>346,012</h3><button type="button" class="formula-button" data-info="dpmo">Formula</button></div><p>DPMO</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1.90</h3><button type="button" class="formula-button" data-info="sigma-metric">Formula</button></div><p>Sigma</p></div>
         </div>
     </section>
 
     <section id="current" class="panel" style="display:none;">
         <div class="section-header">
             <div class="section-title" id="analysisTitle"></div>
-            <button type="button" class="info-button" data-info="metrics">How calculated</button>
+            <button type="button" class="info-button" data-info="metrics">All formulas</button>
         </div>
         <div class="kpi-grid">
-            <div class="kpi"><h3 id="units"></h3><p>Total Units</p></div>
-            <div class="kpi"><h3 id="defUnits"></h3><p>Defective Units</p></div>
-            <div class="kpi"><h3 id="defects"></h3><p>Total Defects</p></div>
-            <div class="kpi"><h3 id="rate"></h3><p>% Defective</p></div>
-            <div class="kpi"><h3 id="dpmo"></h3><p>DPMO</p></div>
-            <div class="kpi"><h3 id="sigma"></h3><p>Sigma</p></div>
-            <div class="kpi"><h3 id="yesPsns"></h3><p>Tracker Yes PSNs</p></div>
-            <div class="kpi"><h3 id="matchedPsns"></h3><p>Analyzed PSNs</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="units"></h3><button type="button" class="formula-button" data-info="total-units">Formula</button></div><p>Total Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="defUnits"></h3><button type="button" class="formula-button" data-info="defective-units">Formula</button></div><p>Defective Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="defects"></h3><button type="button" class="formula-button" data-info="total-defects">Formula</button></div><p>Total Defects</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="rate"></h3><button type="button" class="formula-button" data-info="percent-defective">Formula</button></div><p>% Defective</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="dpmo"></h3><button type="button" class="formula-button" data-info="dpmo">Formula</button></div><p>DPMO</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="sigma"></h3><button type="button" class="formula-button" data-info="sigma-metric">Formula</button></div><p>Sigma</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="yesPsns"></h3><button type="button" class="formula-button" data-info="tracker-yes-psns">Formula</button></div><p>Tracker Yes PSNs</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="matchedPsns"></h3><button type="button" class="formula-button" data-info="analyzed-psns">Formula</button></div><p>Analyzed PSNs</p></div>
         </div>
     </section>
 
@@ -722,7 +759,7 @@
                         <h3>Sigma Capability</h3>
                         <div class="heading-actions">
                             <span>Goal: 2.8</span>
-                            <button type="button" class="info-button" data-info="sigma">How calculated</button>
+                            <button type="button" class="formula-button" data-info="sigma">Formula</button>
                         </div>
                     </div>
                     <div class="chart-frame"><canvas id="zChart"></canvas></div>
@@ -732,7 +769,7 @@
                         <h3>Defective Rate</h3>
                         <div class="heading-actions">
                             <span>Goal: 10%</span>
-                            <button type="button" class="info-button" data-info="defective-rate">How calculated</button>
+                            <button type="button" class="formula-button" data-info="defective-rate">Formula</button>
                         </div>
                     </div>
                     <div class="chart-frame"><canvas id="defChart"></canvas></div>
@@ -746,7 +783,7 @@
                     <h3>Pareto: Top ASC Defect Contributors</h3>
                     <div class="heading-actions">
                         <span>Count and cumulative %</span>
-                        <button type="button" class="info-button" data-info="pareto">How calculated</button>
+                        <button type="button" class="formula-button" data-info="pareto">Formula</button>
                     </div>
                 </div>
                 <div class="chart-frame"><canvas id="paretoChart"></canvas></div>
@@ -759,7 +796,7 @@
                     <h3>Defect Types</h3>
                     <div class="heading-actions">
                         <span>Detected from contact fields</span>
-                        <button type="button" class="info-button" data-info="defect-types">How calculated</button>
+                        <button type="button" class="formula-button" data-info="defect-types">Formula</button>
                     </div>
                 </div>
                 <div class="chart-frame"><canvas id="typesChart"></canvas></div>
@@ -772,7 +809,7 @@
                     <h3>Defective PSNs Heatmap</h3>
                     <div class="heading-actions">
                         <span>US states colored by defect count</span>
-                        <button type="button" class="info-button" data-info="heatmap">How calculated</button>
+                        <button type="button" class="formula-button" data-info="heatmap">Formula</button>
                     </div>
                 </div>
                 <div id="map-container"></div>
@@ -783,7 +820,7 @@
             <div class="side-panel">
                 <div class="table-header">
                     <h3>Top 10 ASCs</h3>
-                    <button type="button" class="info-button" data-info="top10">How calculated</button>
+                    <button type="button" class="formula-button" data-info="top10">Formula</button>
                 </div>
                 <div id="companyList"></div>
             </div>
@@ -795,7 +832,7 @@
                     <h3>Defective PSNs by State</h3>
                     <div class="heading-actions">
                         <span id="tableSummary"></span>
-                        <button type="button" class="info-button" data-info="defect-table">How calculated</button>
+                        <button type="button" class="formula-button" data-info="defect-table">Formula</button>
                     </div>
                 </div>
                 <div class="table-scroll">
@@ -819,7 +856,7 @@
                     <h3>Defective PSNs by Auditor</h3>
                     <div class="heading-actions">
                         <span id="auditorSummary"></span>
-                        <button type="button" class="info-button" data-info="auditor-defects">How calculated</button>
+                        <button type="button" class="formula-button" data-info="auditor-defects">Formula</button>
                     </div>
                 </div>
                 <div class="table-scroll">
@@ -843,7 +880,7 @@
                     <h3>Tracker / Contact List PSN Discrepancies</h3>
                     <div class="heading-actions">
                         <span id="discrepancySummary"></span>
-                        <button type="button" class="info-button" data-info="discrepancies">How calculated</button>
+                        <button type="button" class="formula-button" data-info="discrepancies">Formula</button>
                     </div>
                 </div>
                 <div class="discrepancy-grid">
@@ -1495,143 +1532,189 @@ function renderDiscrepancies(data) {
 
 const infoContent = {
     analysis: {
-        title: "How SigmaSight Analyzes Files",
+        title: "Input Cleaning and Analysis Logic",
         body: `
-            <p>SigmaSight reads the uploaded Excel file rows and cleans blank, NA, N/A, None, and decimal-looking PSNs before matching.</p>
+            <p>SigmaSight standardizes the input before calculating any statistics.</p>
+            <code class="formula">PSN_clean = trim(PSN); if PSN looks like 12345.0, use 12345</code>
+            <code class="formula">Valid US row = Country in {UNITED STATES, USA, US}</code>
+            <code class="formula">Tracker filter = PSN in tracker where QuInsights POC Updated/Reviewed in {YES, Y}</code>
             <ul>
-                <li>When the tracker filter is on, it first finds PSNs where QuInsights POC Updated/Reviewed is Yes.</li>
-                <li>It then analyzes only matching United States contact-list rows.</li>
-                <li>When the tracker filter is off, it analyzes every United States row in the contact list.</li>
-                <li>For each PSN, the Contacts field is split into contact sections such as Primary, Secondary, Site Contact, or Oracle.</li>
-                <li>A row is good when at least one contact section has a valid name, phone, and email.</li>
+                <li>Blank, NA, N/A, None, and NaN-style text are treated as missing.</li>
+                <li>Contacts are split into Primary, Secondary, Site Contact, and Oracle sections.</li>
+                <li>A contact section passes only when name, phone, and email pass validation.</li>
             </ul>
         `
     },
     baseline: {
         title: "Baseline Metric Facts",
         body: `
-            <p>The baseline is the original project starting point from July 21, 2025. It is kept fixed so every new upload compares against the same starting performance.</p>
-            <ul>
-                <li>Total Units: 1,630</li>
-                <li>Defective Units: 564</li>
-                <li>Total Defects: defective units x 3 opportunities</li>
-                <li>% Defective: defective units divided by total units</li>
-                <li>DPMO: defect rate converted to defects per million opportunities</li>
-            </ul>
+            <p>The baseline is a fixed reference point from July 21, 2025. It is not recalculated from new uploads.</p>
+            <code class="formula">n0 = 1,630; d0 = 564; opportunities = 3</code>
+            <code class="formula">Defect Rate0 = d0 / n0 = 564 / 1,630 = 34.60%</code>
+            <code class="formula">Total Defects0 = d0 x 3 = 1,692</code>
+            <code class="formula">DPMO0 = Total Defects0 / (n0 x 3) x 1,000,000 = 346,012</code>
         `
     },
     metrics: {
         title: "Current Metric Facts",
         body: `
-            <p>Current metrics are calculated from the rows included in the selected analysis mode.</p>
+            <p>Let n be analyzed PSNs, d be defective PSNs, and O be contact opportunities per PSN.</p>
+            <code class="formula">O = 3</code>
+            <code class="formula">p = d / n</code>
+            <code class="formula">Total Defects = d x O</code>
+            <code class="formula">DPMO = Total Defects / (n x O) x 1,000,000</code>
+            <code class="formula">Sigma Z = Phi^-1(1 - p) + 1.5</code>
+        `
+    },
+    "total-units": {
+        title: "Total Units Formula",
+        body: `
+            <p>Total Units is the count of rows included in the analysis after filters are applied.</p>
+            <code class="formula">n = count(US contact-list rows included in selected mode)</code>
             <ul>
-                <li>Total Units: analyzed US PSNs.</li>
-                <li>Defective Units: analyzed PSNs where no contact section has valid name, phone, and email.</li>
-                <li>Total Defects: defective units x 3 contact opportunities.</li>
-                <li>% Defective: defective units divided by total units.</li>
-                <li>DPMO: % defective converted to defects per million opportunities.</li>
-                <li>Sigma: calculated from the defect probability, with the 1.5 sigma shift.</li>
+                <li>Tracker ON: n = US contact rows whose PSN is in tracker Yes population.</li>
+                <li>Tracker OFF: n = all US contact-list rows.</li>
             </ul>
+        `
+    },
+    "defective-units": {
+        title: "Defective Units Formula",
+        body: `
+            <p>A unit is defective when no contact section has all required fields valid.</p>
+            <code class="formula">Section Pass = valid(name) AND valid(phone) AND valid(email)</code>
+            <code class="formula">Unit Defective = NOT(any Section Pass)</code>
+            <code class="formula">d = count(Unit Defective = true)</code>
+        `
+    },
+    "total-defects": {
+        title: "Total Defects Formula",
+        body: `
+            <p>SigmaSight uses 3 contact-quality opportunities per defective unit: name, phone, and email.</p>
+            <code class="formula">O = 3</code>
+            <code class="formula">Total Defects = defective units x O</code>
+            <code class="formula">Total Defects = d x 3</code>
+        `
+    },
+    "percent-defective": {
+        title: "% Defective Formula",
+        body: `
+            <p>This is the unit-level defect proportion expressed as a percentage.</p>
+            <code class="formula">p = d / n</code>
+            <code class="formula">% Defective = (d / n) x 100</code>
+        `
+    },
+    dpmo: {
+        title: "DPMO Formula",
+        body: `
+            <p>DPMO means defects per million opportunities.</p>
+            <code class="formula">DPMO = Total Defects / (Total Units x Opportunities per Unit) x 1,000,000</code>
+            <code class="formula">DPMO = (d x 3) / (n x 3) x 1,000,000 = (d / n) x 1,000,000</code>
+        `
+    },
+    "sigma-metric": {
+        title: "Sigma Formula",
+        body: `
+            <p>SigmaSight estimates short-term sigma from the unit defect probability.</p>
+            <code class="formula">p = d / n</code>
+            <code class="formula">Yield = 1 - p</code>
+            <code class="formula">Z_short-term = Phi^-1(Yield) + 1.5</code>
+            <p>Phi^-1 is the inverse standard normal cumulative distribution function. The +1.5 is the conventional Six Sigma shift.</p>
+        `
+    },
+    "tracker-yes-psns": {
+        title: "Tracker Yes PSNs Formula",
+        body: `
+            <p>This metric exists when the audit tracker filter is turned on.</p>
+            <code class="formula">Tracker Yes PSNs = count(unique PSN where QuInsights POC Updated/Reviewed in {YES, Y})</code>
+            <p>When the tracker filter is off, this field shows Off because the tracker is not used.</p>
+        `
+    },
+    "analyzed-psns": {
+        title: "Analyzed PSNs Formula",
+        body: `
+            <p>This is the final count after country and optional tracker filtering.</p>
+            <code class="formula">Tracker ON: Analyzed PSNs = count(US contact PSNs intersect tracker Yes PSNs)</code>
+            <code class="formula">Tracker OFF: Analyzed PSNs = count(US contact PSNs)</code>
         `
     },
     sigma: {
-        title: "Sigma Capability",
+        title: "Sigma Capability Chart Formula",
         body: `
-            <p>SigmaSight converts the defect probability into a short-term sigma estimate.</p>
-            <ul>
-                <li>Defect probability = defective units / total units.</li>
-                <li>The app converts that probability through the inverse normal calculation.</li>
-                <li>Then it adds the standard 1.5 sigma shift used in Six Sigma reporting.</li>
-                <li>The chart compares baseline sigma against current sigma and shows the 2.8 goal line.</li>
-            </ul>
+            <p>The chart plots baseline Sigma and current Sigma as point values against the project goal.</p>
+            <code class="formula">p = defective units / total units</code>
+            <code class="formula">Sigma = Phi^-1(1 - p) + 1.5</code>
+            <code class="formula">Goal line = 2.8 sigma</code>
         `
     },
     "defective-rate": {
-        title: "Defective Rate",
+        title: "Defective Rate Chart Formula",
         body: `
-            <p>The defective rate is the share of analyzed PSNs that fail the contact-quality rule.</p>
-            <ul>
-                <li>Formula: defective units / total analyzed units x 100.</li>
-                <li>A PSN is defective when the Contacts field is empty or no parsed contact section has valid name, phone, and email.</li>
-                <li>The chart compares baseline defective rate against current defective rate and shows the 10% goal line.</li>
-            </ul>
+            <p>The chart plots the baseline and current defective-rate values.</p>
+            <code class="formula">Defective Rate = defective units / total units</code>
+            <code class="formula">% Defective = Defective Rate x 100</code>
+            <code class="formula">Goal line = 10%</code>
         `
     },
     pareto: {
-        title: "Pareto",
+        title: "Pareto Chart Formula",
         body: `
-            <p>The Pareto chart groups defective PSNs by ASC/company name.</p>
-            <ul>
-                <li>Company names are normalized by removing punctuation and common company words like LLC, Inc, Corp, Company, Group, Systems, and Solutions.</li>
-                <li>The bars show the top defect contributors by count.</li>
-                <li>The orange line shows cumulative percentage so you can see where the largest contributors are concentrated.</li>
-            </ul>
+            <p>The Pareto chart ranks defect contributors from largest to smallest.</p>
+            <code class="formula">Count_i = defective PSNs for ASC_i</code>
+            <code class="formula">Total = sum(Count_i for all displayed ASCs)</code>
+            <code class="formula">Cumulative %_k = (sum from i=1 to k Count_i / Total) x 100</code>
+            <p>The bar chart shows Count_i. The line chart shows cumulative percentage.</p>
         `
     },
     "defect-types": {
-        title: "Defect Types",
+        title: "Defect Type Formula",
         body: `
-            <p>Defect types come from the failed contact fields inside each contact section.</p>
-            <ul>
-                <li>Missing name is counted when a contact name is blank or NA.</li>
-                <li>Missing or invalid phone is counted when there are fewer than 7 digits.</li>
-                <li>Missing or invalid email is counted when the email pattern is not found.</li>
-            </ul>
+            <p>Defect types are counted from failed field checks across defective contact sections.</p>
+            <code class="formula">Name valid = name not blank and not NA/N/A/None</code>
+            <code class="formula">Phone valid = count(digits(phone)) >= 7</code>
+            <code class="formula">Email valid = text matches pattern name@domain.ext</code>
+            <p>Each failed rule increments its defect-reason count.</p>
         `
     },
     heatmap: {
-        title: "Heatmap",
+        title: "Heatmap Formula",
         body: `
-            <p>The heatmap counts defective PSNs by state.</p>
-            <ul>
-                <li>Only defective analyzed PSNs are included.</li>
-                <li>Darker states have more defective PSNs.</li>
-                <li>Hovering a state shows the state name and defective PSN count.</li>
-            </ul>
+            <p>The heatmap is a frequency distribution of defective PSNs by state.</p>
+            <code class="formula">State Count_s = count(defective PSNs where state = s)</code>
+            <code class="formula">Color Intensity_s = (State Count_s - min count) / (max count - min count)</code>
+            <p>Darker states have higher normalized defect counts.</p>
         `
     },
     top10: {
-        title: "Top 10 ASCs",
+        title: "Top 10 ASC Formula",
         body: `
-            <p>This list shows the ASCs/companies with the highest count of defective PSNs in the analyzed population.</p>
-            <ul>
-                <li>Only defective PSNs are counted.</li>
-                <li>Names are cleaned so similar legal names group together more consistently.</li>
-                <li>The list is sorted from highest defect count to lowest.</li>
-            </ul>
+            <p>Top 10 ASCs are the highest-frequency contributors after company-name normalization.</p>
+            <code class="formula">ASC Count_i = count(defective PSNs assigned to normalized ASC_i)</code>
+            <code class="formula">Top 10 = first 10 ASC_i sorted by ASC Count_i descending</code>
         `
     },
     "defect-table": {
-        title: "Defective PSNs by State",
+        title: "Defective PSNs by State Formula",
         body: `
-            <p>This table lists every defective analyzed PSN grouped by state.</p>
-            <ul>
-                <li>The count is the number of defective PSNs in that state.</li>
-                <li>Hover a PSN chip to see PSN, ASC name, city, and state.</li>
-                <li>When the tracker filter is on, only tracker Yes PSNs are eligible.</li>
-            </ul>
+            <p>This table is the raw state frequency table behind the heatmap.</p>
+            <code class="formula">Rows_s = {PSN | PSN is defective AND PSN state = s}</code>
+            <code class="formula">Count_s = size(Rows_s)</code>
         `
     },
     "auditor-defects": {
-        title: "Defective PSNs by Auditor",
+        title: "Defective PSNs by Auditor Formula",
         body: `
-            <p>This result is available when the tracker filter is on.</p>
-            <ul>
-                <li>SigmaSight takes the assigned auditor from the tracker row for each Yes PSN.</li>
-                <li>If that PSN is defective in the contact list, it is counted under that auditor.</li>
-                <li>The PSN list shows exactly which defective units belong to each auditor.</li>
-            </ul>
+            <p>This is available only when the tracker filter is on because the auditor comes from the tracker.</p>
+            <code class="formula">Auditor Count_a = count(defective tracker-Yes PSNs assigned to auditor a)</code>
+            <code class="formula">PSN List_a = {PSN | PSN defective AND assigned auditor = a}</code>
         `
     },
     discrepancies: {
-        title: "PSN Discrepancies",
+        title: "PSN Discrepancy Set Formulas",
         body: `
-            <p>This result compares tracker Yes PSNs against the contact list.</p>
-            <ul>
-                <li>Tracker Yes PSNs missing from contact list: Yes in tracker, not found anywhere in the contact list.</li>
-                <li>Tracker Yes PSNs found but not US contact: found in contact list but not as a United States row.</li>
-                <li>US contact PSNs not marked Yes in tracker: US contact-list PSNs that were not included in the tracker Yes population.</li>
-            </ul>
+            <p>Let T be tracker Yes PSNs, C be all contact-list PSNs, and U be United States contact-list PSNs.</p>
+            <code class="formula">Missing from contact list = T - C</code>
+            <code class="formula">Found but not US contact = (T intersection C) - U</code>
+            <code class="formula">US contact not tracker Yes = U - T</code>
         `
     }
 };

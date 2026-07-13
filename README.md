@@ -69,6 +69,8 @@ http://127.0.0.1:8000
 
 After analysis, the dashboard shows Control Phase tabs for Capability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, and Discrepancies.
 
+Each KPI, chart, and result table includes a Formula button that explains the statistical calculation used by SigmaSightExtra.
+
 ## Improvements From Original
 
 - Safer Excel upload handling
