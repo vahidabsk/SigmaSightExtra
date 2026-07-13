@@ -68,10 +68,85 @@
         }
 
         .upload-row {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 10px;
             align-items: center;
+        }
+
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-flex;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+
+        .slider::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            top: 3px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+            transition: 0.2s;
+        }
+
+        .switch input:checked + .slider {
+            background: var(--accent);
+        }
+
+        .switch input:checked + .slider::before {
+            transform: translateX(22px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .file-field {
+            display: grid;
+            gap: 6px;
+        }
+
+        .file-field label {
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .upload-actions {
+            display: flex;
+            gap: 8px;
+            align-items: end;
+            height: 100%;
         }
 
         input[type="file"] {
@@ -113,6 +188,64 @@
             margin-bottom: 12px;
         }
 
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .section-header .section-title {
+            margin-bottom: 0;
+        }
+
+        .info-button {
+            border: 1px solid var(--line);
+            background: #ffffff;
+            color: var(--accent-dark);
+            border-radius: 999px;
+            padding: 7px 10px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .info-button:hover {
+            border-color: var(--accent);
+            background: #eef8f6;
+        }
+
+        .formula-button {
+            border: 1px solid #cfe7e3;
+            background: #ffffff;
+            color: var(--accent-dark);
+            border-radius: 999px;
+            padding: 4px 7px;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .formula-button:hover {
+            border-color: var(--accent);
+            background: #eef8f6;
+        }
+
+        .formula {
+            display: block;
+            margin: 8px 0;
+            padding: 9px 10px;
+            border: 1px solid #d7dee8;
+            border-radius: 6px;
+            background: #f8fafc;
+            color: #0f172a;
+            font-family: Menlo, Consolas, monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
@@ -125,6 +258,13 @@
             padding: 12px;
             min-height: 92px;
             background: linear-gradient(180deg, #ffffff 0%, #f6fbfa 100%);
+        }
+
+        .kpi-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
         }
 
         .kpi h3 {
@@ -157,6 +297,32 @@
             gap: 22px;
         }
 
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-button {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 9px 14px;
+            background: #ffffff;
+            color: var(--ink);
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         .chart-card {
             background: #fbfefd;
             border: 1px solid var(--line);
@@ -186,6 +352,12 @@
             white-space: nowrap;
         }
 
+        .heading-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .chart-frame {
             height: 350px;
         }
@@ -193,6 +365,289 @@
         canvas {
             width: 100% !important;
             height: 100% !important;
+        }
+
+        .map-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 300px;
+            gap: 18px;
+            align-items: start;
+        }
+
+        #map-container {
+            position: relative;
+        }
+
+        #map-container svg {
+            width: 100%;
+            height: 500px;
+            background: #fbfefd;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            display: block;
+        }
+
+        .map-label-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .map-state-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            color: #0f172a;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow:
+                -1px -1px 0 rgba(255, 255, 255, 0.95),
+                1px -1px 0 rgba(255, 255, 255, 0.95),
+                -1px 1px 0 rgba(255, 255, 255, 0.95),
+                1px 1px 0 rgba(255, 255, 255, 0.95),
+                0 0 5px rgba(255, 255, 255, 0.95);
+            pointer-events: none;
+        }
+
+        path {
+            fill: #eef2f6;
+            stroke: #94a3b8;
+            stroke-width: 1;
+        }
+
+        .side-panel,
+        .table-panel {
+            background: #fbfefd;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .company-item {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .rank {
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .count {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .table-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .table-header span {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .table-scroll {
+            max-height: 440px;
+            overflow: auto;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            table-layout: fixed;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 12px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            z-index: 1;
+        }
+
+        .state-col { width: 170px; font-weight: 800; }
+        .count-col { width: 90px; text-align: center; }
+
+        .psn-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .psn-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 140px;
+            overflow: auto;
+        }
+
+        .psn-chip {
+            display: inline-flex;
+            align-items: center;
+            max-width: 180px;
+            min-height: 26px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef8f6;
+            border: 1px solid #bfebe3;
+            color: var(--accent-dark);
+            font-size: 12px;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .psn-chip:hover,
+        .psn-chip:focus {
+            background: #ccfbf1;
+            border-color: var(--accent);
+            outline: 2px solid rgba(15, 118, 110, 0.18);
+        }
+
+        .psn-tooltip {
+            position: fixed;
+            display: none;
+            z-index: 20;
+            max-width: 280px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #172033;
+            color: white;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .psn-tooltip strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .count-badge {
+            display: inline-flex;
+            min-width: 34px;
+            justify-content: center;
+            padding: 5px 8px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: white;
+            font-weight: 800;
+        }
+
+        .empty {
+            color: var(--muted);
+            font-weight: 700;
+            padding: 18px;
+            border: 1px dashed #a8b6c7;
+            border-radius: 8px;
+            background: #fbfefd;
+        }
+
+        .discrepancy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 14px;
+        }
+
+        .discrepancy-card {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 14px;
+        }
+
+        .discrepancy-card h4 {
+            margin: 0 0 8px;
+            color: var(--ink);
+            font-size: 14px;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.32);
+            z-index: 50;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .info-modal {
+            width: min(440px, 100%);
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28);
+            padding: 18px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--ink);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: var(--ink);
+        }
+
+        .modal-body {
+            color: var(--ink);
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .modal-body ul {
+            margin: 8px 0 0;
+            padding-left: 18px;
         }
 
         @media (min-width: 780px) {
@@ -204,6 +659,15 @@
             main { padding: 14px; }
             h1 { font-size: 26px; }
             button { width: 100%; }
+            .upload-actions { display: grid; }
+            .section-header,
+            .chart-heading,
+            .table-header { align-items: stretch; flex-direction: column; }
+            .heading-actions { align-items: stretch; flex-direction: column; }
+            .map-layout { grid-template-columns: 1fr; }
+            #map-container svg { height: auto; }
+            .state-col { width: 110px; }
+            .count-col { width: 70px; }
         }
     </style>
 </head>
@@ -218,71 +682,244 @@
     </header>
 
     <section class="panel">
+        <label class="filter-toggle">
+            <span class="switch">
+                <input type="checkbox" id="trackerToggle" checked>
+                <span class="slider"></span>
+            </span>
+            <span>Use audit tracker filter</span>
+        </label>
         <div class="upload-row">
-            <input type="file" id="fileInput" accept=".xlsx,.xls">
-            <button id="analyzeButton" onclick="upload()">Analyze</button>
-            <button class="secondary" onclick="openDefects()">View Defective PSNs Map</button>
+            <div class="file-field" id="trackerField">
+                <label for="trackerInput">Audit Tracker</label>
+                <input type="file" id="trackerInput" accept=".xlsx,.xls">
+            </div>
+            <div class="file-field">
+                <label for="contactInput">Customer Contact List</label>
+                <input type="file" id="contactInput" accept=".xlsx,.xls">
+            </div>
+            <div class="upload-actions">
+                <button id="analyzeButton" onclick="upload()">Analyze</button>
+                <button type="button" class="info-button" data-info="analysis">How SigmaSight analyzes files</button>
+            </div>
         </div>
-        <div id="status" class="status">Upload the Excel file to calculate the current performance.</div>
+        <div id="status" class="status">Upload both files. SigmaSight will analyze only PSNs marked Yes in the tracker QuInsights column.</div>
     </section>
 
     <section class="panel">
-        <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
+        <div class="section-header">
+            <div class="section-title">Metric Facts (Baseline - July 21, 2025)</div>
+            <button type="button" class="info-button" data-info="baseline">All formulas</button>
+        </div>
         <div class="kpi-grid">
-            <div class="kpi"><h3>1,630</h3><p>Total Units</p></div>
-            <div class="kpi"><h3>564</h3><p>Defective Units</p></div>
-            <div class="kpi"><h3>1,692</h3><p>Total Defects</p></div>
-            <div class="kpi"><h3>34.60%</h3><p>% Defective</p></div>
-            <div class="kpi"><h3>346,012</h3><p>DPMO</p></div>
-            <div class="kpi"><h3>1.90</h3><p>Sigma</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1,630</h3><button type="button" class="formula-button" data-info="total-units">Formula</button></div><p>Total Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>564</h3><button type="button" class="formula-button" data-info="defective-units">Formula</button></div><p>Defective Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1,692</h3><button type="button" class="formula-button" data-info="total-defects">Formula</button></div><p>Total Defects</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>34.60%</h3><button type="button" class="formula-button" data-info="percent-defective">Formula</button></div><p>% Defective</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>346,012</h3><button type="button" class="formula-button" data-info="dpmo">Formula</button></div><p>DPMO</p></div>
+            <div class="kpi"><div class="kpi-top"><h3>1.90</h3><button type="button" class="formula-button" data-info="sigma-metric">Formula</button></div><p>Sigma</p></div>
         </div>
     </section>
 
     <section id="current" class="panel" style="display:none;">
-        <div class="section-title" id="analysisTitle"></div>
+        <div class="section-header">
+            <div class="section-title" id="analysisTitle"></div>
+            <button type="button" class="info-button" data-info="metrics">All formulas</button>
+        </div>
         <div class="kpi-grid">
-            <div class="kpi"><h3 id="units"></h3><p>Total Units</p></div>
-            <div class="kpi"><h3 id="defUnits"></h3><p>Defective Units</p></div>
-            <div class="kpi"><h3 id="defects"></h3><p>Total Defects</p></div>
-            <div class="kpi"><h3 id="rate"></h3><p>% Defective</p></div>
-            <div class="kpi"><h3 id="dpmo"></h3><p>DPMO</p></div>
-            <div class="kpi"><h3 id="sigma"></h3><p>Sigma</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="units"></h3><button type="button" class="formula-button" data-info="total-units">Formula</button></div><p>Total Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="defUnits"></h3><button type="button" class="formula-button" data-info="defective-units">Formula</button></div><p>Defective Units</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="defects"></h3><button type="button" class="formula-button" data-info="total-defects">Formula</button></div><p>Total Defects</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="rate"></h3><button type="button" class="formula-button" data-info="percent-defective">Formula</button></div><p>% Defective</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="dpmo"></h3><button type="button" class="formula-button" data-info="dpmo">Formula</button></div><p>DPMO</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="sigma"></h3><button type="button" class="formula-button" data-info="sigma-metric">Formula</button></div><p>Sigma</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="yesPsns"></h3><button type="button" class="formula-button" data-info="tracker-yes-psns">Formula</button></div><p>Tracker Yes PSNs</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="matchedPsns"></h3><button type="button" class="formula-button" data-info="analyzed-psns">Formula</button></div><p>Analyzed PSNs</p></div>
         </div>
     </section>
 
     <div id="improve" class="improvement"></div>
 
-    <section id="charts" class="panel" style="display:none;">
-        <div class="charts">
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Sigma Capability</h3>
-                    <span>Goal: 2.8</span>
-                </div>
-                <div class="chart-frame">
-                    <canvas id="zChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <div class="chart-heading">
-                    <h3>Defective Rate</h3>
-                    <span>Goal: 10%</span>
-                </div>
-                <div class="chart-frame">
-                    <canvas id="defChart"></canvas>
-                </div>
-            </div>
+    <section id="dashboardTabs" class="panel" style="display:none;">
+        <div class="tabs" role="tablist" aria-label="Dashboard views">
+            <button class="tab-button active" data-tab="capability">Capability</button>
+            <button class="tab-button" data-tab="pareto">Pareto</button>
+            <button class="tab-button" data-tab="types">Defect Types</button>
+            <button class="tab-button" data-tab="heatmap">Heatmap</button>
+            <button class="tab-button" data-tab="top10">Top 10</button>
+            <button class="tab-button" data-tab="defectTable">Table</button>
+            <button class="tab-button" data-tab="auditorDefects">Auditor Defects</button>
+            <button class="tab-button" data-tab="discrepancies">Discrepancies</button>
         </div>
+
+        <section id="capability" class="tab-panel active">
+            <div class="charts">
+                <div class="chart-card">
+                    <div class="chart-heading">
+                        <h3>Sigma Capability</h3>
+                        <div class="heading-actions">
+                            <span>Goal: 2.8</span>
+                            <button type="button" class="formula-button" data-info="sigma">Formula</button>
+                        </div>
+                    </div>
+                    <div class="chart-frame"><canvas id="zChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-heading">
+                        <h3>Defective Rate</h3>
+                        <div class="heading-actions">
+                            <span>Goal: 10%</span>
+                            <button type="button" class="formula-button" data-info="defective-rate">Formula</button>
+                        </div>
+                    </div>
+                    <div class="chart-frame"><canvas id="defChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="pareto" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Pareto: Top ASC Defect Contributors</h3>
+                    <div class="heading-actions">
+                        <span>Count and cumulative %</span>
+                        <button type="button" class="formula-button" data-info="pareto">Formula</button>
+                    </div>
+                </div>
+                <div class="chart-frame"><canvas id="paretoChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="types" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Defect Types</h3>
+                    <div class="heading-actions">
+                        <span>Detected from contact fields</span>
+                        <button type="button" class="formula-button" data-info="defect-types">Formula</button>
+                    </div>
+                </div>
+                <div class="chart-frame"><canvas id="typesChart"></canvas></div>
+            </div>
+        </section>
+
+        <section id="heatmap" class="tab-panel">
+            <div class="chart-card">
+                <div class="chart-heading">
+                    <h3>Defective PSNs Heatmap</h3>
+                    <div class="heading-actions">
+                        <span>US states colored by defect count</span>
+                        <button type="button" class="formula-button" data-info="heatmap">Formula</button>
+                    </div>
+                </div>
+                <div id="map-container"></div>
+            </div>
+        </section>
+
+        <section id="top10" class="tab-panel">
+            <div class="side-panel">
+                <div class="table-header">
+                    <h3>Top 10 ASCs</h3>
+                    <button type="button" class="formula-button" data-info="top10">Formula</button>
+                </div>
+                <div id="companyList"></div>
+            </div>
+        </section>
+
+        <section id="defectTable" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Defective PSNs by State</h3>
+                    <div class="heading-actions">
+                        <span id="tableSummary"></span>
+                        <button type="button" class="formula-button" data-info="defect-table">Formula</button>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="state-col">State</th>
+                                <th class="count-col">Count</th>
+                                <th>PSNs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="defectRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="auditorDefects" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Defective PSNs by Auditor</h3>
+                    <div class="heading-actions">
+                        <span id="auditorSummary"></span>
+                        <button type="button" class="formula-button" data-info="auditor-defects">Formula</button>
+                    </div>
+                </div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="state-col">Auditor</th>
+                                <th class="count-col">Count</th>
+                                <th>Defective PSNs</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditorRows"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="discrepancies" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Tracker / Contact List PSN Discrepancies</h3>
+                    <div class="heading-actions">
+                        <span id="discrepancySummary"></span>
+                        <button type="button" class="formula-button" data-info="discrepancies">Formula</button>
+                    </div>
+                </div>
+                <div class="discrepancy-grid">
+                    <div class="discrepancy-card">
+                        <h4>Tracker Yes PSNs missing from contact list</h4>
+                        <div id="missingContactList" class="psn-stack"></div>
+                    </div>
+                    <div class="discrepancy-card">
+                        <h4>Tracker Yes PSNs found but not US contact</h4>
+                        <div id="notAnalyzedList" class="psn-stack"></div>
+                    </div>
+                    <div class="discrepancy-card">
+                        <h4>US contact PSNs not marked Yes in tracker</h4>
+                        <div id="contactNotYesList" class="psn-stack"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </section>
 </main>
+
+<div id="psnTooltip" class="psn-tooltip"></div>
+<div id="infoBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="info-modal" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+        <div class="modal-header">
+            <h3 id="infoTitle"></h3>
+            <button type="button" class="modal-close" onclick="closeInfoModal()">X</button>
+        </div>
+        <div id="infoBody" class="modal-body"></div>
+    </div>
+</div>
 
 <script>
 let zChart;
 let defChart;
-
-function openDefects() {
-    window.open("/defects", "_blank");
-}
+let paretoChart;
+let typesChart;
+let mapLabelAbbrevs = [];
 
 function setStatus(message, isError = false) {
     const status = document.getElementById("status");
@@ -299,19 +936,30 @@ function formatSigma(value) {
 }
 
 async function upload() {
-    const file = document.getElementById("fileInput").files[0];
+    const useTrackerFilter = document.getElementById("trackerToggle").checked;
+    const trackerFile = document.getElementById("trackerInput").files[0];
+    const contactFile = document.getElementById("contactInput").files[0];
     const button = document.getElementById("analyzeButton");
 
-    if (!file) {
-        setStatus("Please select an Excel file first.", true);
+    if (!contactFile) {
+        setStatus("Please select the customer contact list.", true);
+        return;
+    }
+
+    if (useTrackerFilter && !trackerFile) {
+        setStatus("Please select the audit tracker or turn off the tracker filter.", true);
         return;
     }
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("use_tracker_filter", useTrackerFilter ? "true" : "false");
+    if (useTrackerFilter) {
+        formData.append("tracker_file", trackerFile);
+    }
+    formData.append("contact_file", contactFile);
 
     button.disabled = true;
-    setStatus("Analyzing file...");
+    setStatus(useTrackerFilter ? "Analyzing contact list using tracker Yes PSNs..." : "Analyzing full US contact list...");
 
     try {
         const res = await fetch("/upload", {
@@ -346,6 +994,8 @@ function renderResults(data) {
     document.getElementById("rate").innerText = rate.toFixed(2) + "%";
     document.getElementById("dpmo").innerText = formatNumber(Math.round(data.dpmo));
     document.getElementById("sigma").innerText = formatSigma(sigma);
+    document.getElementById("yesPsns").innerText = data.use_tracker_filter ? formatNumber(data.quinsights_yes_psns) : "Off";
+    document.getElementById("matchedPsns").innerText = formatNumber(data.matched_psns);
 
     const reduction = baseline.total_defects
         ? ((baseline.total_defects - currentDefects) / baseline.total_defects) * 100
@@ -355,19 +1005,32 @@ function renderResults(data) {
     document.getElementById("improve").innerText =
         `${improvement.toFixed(1)}% point improvement | ${reduction.toFixed(1)}% defect reduction`;
 
-    const today = new Date().toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric"
-    });
+    const reportDate = data.report_date || "Unknown Report Date";
     document.getElementById("analysisTitle").innerText =
-        "Metric Facts (Analyzed - " + today + ")";
+        data.use_tracker_filter
+            ? "Metric Facts (Contact Report Date - " + reportDate + ", filtered by tracker Yes PSNs)"
+            : "Metric Facts (Contact Report Date - " + reportDate + ", full US contact list)";
+
+    setTrackerTabsVisible(data.use_tracker_filter);
 
     document.getElementById("current").style.display = "block";
-    document.getElementById("charts").style.display = "block";
+    document.getElementById("dashboardTabs").style.display = "block";
     document.getElementById("improve").style.display = "block";
 
     drawCharts(baseline, rate, sigma);
+    loadDashboardTabs();
+}
+
+function setTrackerTabsVisible(isVisible) {
+    document.querySelector('[data-tab="auditorDefects"]').classList.toggle("hidden", !isVisible);
+    document.querySelector('[data-tab="discrepancies"]').classList.toggle("hidden", !isVisible);
+
+    if (!isVisible) {
+        const activeTrackerTab = document.querySelector("#auditorDefects.active, #discrepancies.active");
+        if (activeTrackerTab) {
+            document.querySelector('[data-tab="capability"]').click();
+        }
+    }
 }
 
 function drawCharts(baseline, rate, sigma) {
@@ -522,6 +1185,657 @@ function drawCharts(baseline, rate, sigma) {
             }
         }
     });
+}
+
+function baseOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#172033",
+                    font: { size: 13, weight: "700" },
+                    usePointStyle: true,
+                    padding: 16
+                }
+            },
+            tooltip: {
+                backgroundColor: "#172033",
+                titleFont: { size: 14, weight: "700" },
+                bodyFont: { size: 13 },
+                padding: 12
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                ticks: { color: "#172033", font: { size: 12, weight: "700" } }
+            },
+            y: {
+                beginAtZero: true,
+                grid: { color: "#d9e2ec", lineWidth: 1.1 },
+                ticks: { color: "#475569", font: { size: 12, weight: "700" } }
+            }
+        }
+    };
+}
+
+async function loadDashboardTabs() {
+    const [controlRes, detailsRes, companiesRes, auditorRes, discrepancyRes, svgRes] = await Promise.all([
+        fetch("/control-data"),
+        fetch("/defects-details"),
+        fetch("/top-companies"),
+        fetch("/auditor-defects"),
+        fetch("/psn-discrepancies"),
+        fetch("/static/us.svg")
+    ]);
+
+    const controlData = await controlRes.json();
+    const defectDetails = detailsRes.ok ? await detailsRes.json() : {};
+    const companies = await companiesRes.json();
+    const auditorDefects = auditorRes.ok ? await auditorRes.json() : [];
+    const discrepancies = discrepancyRes.ok ? await discrepancyRes.json() : {};
+    const svgText = await svgRes.text();
+
+    renderPareto(controlData);
+    renderTypes(controlData);
+    renderHeatmap(defectDetails, svgText);
+    renderTopCompanies(companies);
+    renderDefectTable(defectDetails);
+    renderAuditorDefects(auditorDefects);
+    renderDiscrepancies(discrepancies);
+}
+
+function renderPareto(data) {
+    const pareto = data.pareto || [];
+
+    if (paretoChart) paretoChart.destroy();
+    paretoChart = new Chart(document.getElementById("paretoChart"), {
+        data: {
+            labels: pareto.map(item => item.name),
+            datasets: [
+                {
+                    type: "bar",
+                    label: "Defective PSNs",
+                    data: pareto.map(item => item.count),
+                    backgroundColor: "rgba(15, 118, 110, 0.86)",
+                    borderColor: "#0f766e",
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    yAxisID: "y"
+                },
+                {
+                    type: "line",
+                    label: "Cumulative %",
+                    data: pareto.map(item => item.cumulative),
+                    borderColor: "#f97316",
+                    backgroundColor: "#f97316",
+                    pointBackgroundColor: "#f97316",
+                    pointBorderColor: "#ffffff",
+                    pointBorderWidth: 3,
+                    pointRadius: 6,
+                    yAxisID: "y1"
+                }
+            ]
+        },
+        options: {
+            ...baseOptions(),
+            scales: {
+                x: {
+                    ...baseOptions().scales.x,
+                    ticks: { ...baseOptions().scales.x.ticks, maxRotation: 35, minRotation: 0 }
+                },
+                y: {
+                    ...baseOptions().scales.y,
+                    title: { display: true, text: "Count", color: "#172033", font: { weight: "700" } }
+                },
+                y1: {
+                    position: "right",
+                    min: 0,
+                    max: 100,
+                    grid: { drawOnChartArea: false },
+                    ticks: { color: "#475569", callback: value => `${value}%` },
+                    title: { display: true, text: "Cumulative %", color: "#172033", font: { weight: "700" } }
+                }
+            }
+        }
+    });
+}
+
+function renderTypes(data) {
+    const types = data.defect_types || [];
+
+    if (typesChart) typesChart.destroy();
+    typesChart = new Chart(document.getElementById("typesChart"), {
+        type: "bar",
+        data: {
+            labels: types.map(item => item.type),
+            datasets: [{
+                label: "Detected defect reasons",
+                data: types.map(item => item.count),
+                backgroundColor: "rgba(124, 58, 237, 0.82)",
+                borderColor: "#7c3aed",
+                borderWidth: 2,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            ...baseOptions(),
+            indexAxis: "y",
+            scales: {
+                x: { ...baseOptions().scales.y, beginAtZero: true },
+                y: { ...baseOptions().scales.x, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getColor(count, min, max) {
+    if (max === min) return "#99f6e4";
+    const ratio = (count - min) / (max - min);
+    const light = [204, 251, 241];
+    const dark = [15, 118, 110];
+    const mixed = light.map((value, index) => Math.floor(value + (dark[index] - value) * ratio));
+    return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+}
+
+function renderHeatmap(data, svgText) {
+    const mapContainer = document.getElementById("map-container");
+    mapContainer.innerHTML = `${svgText}<div class="map-label-layer" id="mapLabelLayer"></div>`;
+    const svg = mapContainer.querySelector("svg");
+    const labelLayer = document.getElementById("mapLabelLayer");
+
+    const counts = Object.values(data).map(items => items.length);
+    if (!counts.length) return;
+
+    const min = Math.min(...counts);
+    const max = Math.max(...counts);
+    const stateToAbbrev = {
+        "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE",
+        "Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS",
+        "Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS",
+        "Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY",
+        "North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI",
+        "South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA",
+        "West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY"
+    };
+
+    Object.values(stateToAbbrev).forEach(abbrev => {
+        stateToAbbrev[abbrev] = abbrev;
+    });
+
+    const stateElements = {};
+    mapLabelAbbrevs = [...new Set(Object.values(stateToAbbrev))];
+
+    Object.values(stateToAbbrev).forEach(abbrev => {
+        stateElements[abbrev] = svg.querySelector(`#${abbrev}`);
+    });
+
+    for (const state in data) {
+        const cleanState = state.trim();
+        const count = data[state].length;
+        const abbrev = stateToAbbrev[cleanState];
+        if (!abbrev) continue;
+
+        const stateElement = stateElements[abbrev] || svg.querySelector(`#${abbrev}`);
+        if (!stateElement) continue;
+
+        stateElement.style.fill = getColor(count, min, max);
+        stateElement.style.stroke = "#0f766e";
+        stateElement.style.strokeWidth = "1.4";
+
+        const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+        title.textContent = `${cleanState}: ${count} defective PSNs`;
+        stateElement.appendChild(title);
+    }
+
+    requestAnimationFrame(refreshMapLabels);
+}
+
+function refreshMapLabels() {
+    const mapContainer = document.getElementById("map-container");
+    const svg = mapContainer?.querySelector("svg");
+    const labelLayer = document.getElementById("mapLabelLayer");
+    if (!svg || !labelLayer || !mapLabelAbbrevs.length) return;
+
+    const svgBox = svg.getBoundingClientRect();
+    if (!svgBox.width || !svgBox.height) return;
+
+    labelLayer.innerHTML = "";
+
+    mapLabelAbbrevs.forEach(abbrev => {
+        const stateElement = svg.querySelector(`#${abbrev}`);
+        if (!stateElement) return;
+
+        try {
+            const stateBox = stateElement.getBoundingClientRect();
+            if (!stateBox.width || !stateBox.height) return;
+
+            const label = document.createElement("span");
+            label.className = "map-state-label";
+            label.dataset.stateLabel = abbrev;
+            label.style.left = `${stateBox.left - svgBox.left + stateBox.width / 2}px`;
+            label.style.top = `${stateBox.top - svgBox.top + stateBox.height / 2}px`;
+            label.textContent = abbrev;
+            labelLayer.appendChild(label);
+        } catch (error) {
+            // Some SVG shapes may not expose a usable box in every browser.
+        }
+    });
+}
+
+function renderTopCompanies(companies) {
+    const companyList = document.getElementById("companyList");
+    companyList.innerHTML = "";
+
+    companies.forEach((item, index) => {
+        companyList.innerHTML += `
+            <div class="company-item">
+                <div class="rank">${index + 1}. ${escapeHtml(item[0])}</div>
+                <div class="count">${item[1]} defective PSNs</div>
+            </div>
+        `;
+    });
+}
+
+function psnChips(items) {
+    return items
+        .map(item => `
+            <span
+                class="psn-chip"
+                tabindex="0"
+                data-psn="${escapeHtml(item.psn || "Unknown")}"
+                data-asc="${escapeHtml(item.asc_name || "Unknown")}"
+                data-city="${escapeHtml(item.city || "Unknown")}"
+                data-state="${escapeHtml(item.state || "Unknown")}"
+            >${escapeHtml(item.psn || "Unknown")}</span>
+        `)
+        .join("");
+}
+
+function simplePsnChips(psns) {
+    const list = psns || [];
+    if (!list.length) return `<div class="empty">No PSN discrepancies found.</div>`;
+    return list
+        .map(psn => `<span class="psn-chip">${escapeHtml(psn)}</span>`)
+        .join("");
+}
+
+function renderDefectTable(data) {
+    const table = document.getElementById("defectRows");
+    const tableSummary = document.getElementById("tableSummary");
+    const counts = Object.values(data).map(items => items.length);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+
+    tableSummary.textContent = `${Object.keys(data).length} states | ${total} PSNs`;
+    table.innerHTML = "";
+
+    Object.keys(data)
+        .sort((a, b) => data[b].length - data[a].length || a.localeCompare(b))
+        .forEach(state => {
+            const items = data[state];
+            table.innerHTML += `
+                <tr>
+                    <td class="state-col">${escapeHtml(state.trim())}</td>
+                    <td class="count-col"><span class="count-badge">${items.length}</span></td>
+                    <td><div class="psn-list">${psnChips(items)}</div></td>
+                </tr>
+            `;
+        });
+}
+
+function renderAuditorDefects(items) {
+    const table = document.getElementById("auditorRows");
+    const summary = document.getElementById("auditorSummary");
+    const totalDefects = (items || []).reduce((sum, item) => sum + Number(item.count || 0), 0);
+
+    summary.textContent = `${(items || []).length} auditors | ${totalDefects} defective PSNs`;
+    table.innerHTML = "";
+
+    if (!items || !items.length) {
+        table.innerHTML = `<tr><td colspan="3"><div class="empty">No defective PSNs found for the analyzed tracker Yes population.</div></td></tr>`;
+        return;
+    }
+
+    items.forEach(item => {
+        table.innerHTML += `
+            <tr>
+                <td class="state-col">${escapeHtml(item.auditor || "Unknown")}</td>
+                <td class="count-col"><span class="count-badge">${item.count || 0}</span></td>
+                <td><div class="psn-stack">${simplePsnChips(item.psns || [])}</div></td>
+            </tr>
+        `;
+    });
+}
+
+function renderDiscrepancies(data) {
+    const missing = data.tracker_yes_missing_from_contact_list || [];
+    const notAnalyzed = data.tracker_yes_found_but_not_us_contact || [];
+    const contactNotYes = data.contact_us_not_tracker_yes || [];
+    const total = missing.length + notAnalyzed.length + contactNotYes.length;
+
+    document.getElementById("discrepancySummary").textContent = `${total} PSN differences`;
+    document.getElementById("missingContactList").innerHTML = simplePsnChips(missing);
+    document.getElementById("notAnalyzedList").innerHTML = simplePsnChips(notAnalyzed);
+    document.getElementById("contactNotYesList").innerHTML = simplePsnChips(contactNotYes);
+}
+
+const infoContent = {
+    analysis: {
+        title: "Input Cleaning and Analysis Logic",
+        body: `
+            <p>SigmaSight standardizes the input before calculating any statistics.</p>
+            <code class="formula">PSN_clean = trim(PSN); if PSN looks like 12345.0, use 12345</code>
+            <code class="formula">Valid US row = Country in {UNITED STATES, USA, US}</code>
+            <code class="formula">Tracker filter = PSN in tracker where QuInsights POC Updated/Reviewed in {YES, Y}</code>
+            <ul>
+                <li>Blank, NA, N/A, None, and NaN-style text are treated as missing.</li>
+                <li>Contacts are split into Primary, Secondary, Site Contact, and Oracle sections.</li>
+                <li>A contact section passes only when name, phone, and email pass validation.</li>
+            </ul>
+        `
+    },
+    baseline: {
+        title: "Baseline Metric Facts",
+        body: `
+            <p>The baseline is a fixed reference point from July 21, 2025. It is not recalculated from new uploads.</p>
+            <code class="formula">n0 = 1,630; d0 = 564; opportunities = 3</code>
+            <code class="formula">Defect Rate0 = d0 / n0 = 564 / 1,630 = 34.60%</code>
+            <code class="formula">Total Defects0 = d0 x 3 = 1,692</code>
+            <code class="formula">DPMO0 = Total Defects0 / (n0 x 3) x 1,000,000 = 346,012</code>
+        `
+    },
+    metrics: {
+        title: "Current Metric Facts",
+        body: `
+            <p>Let n be analyzed PSNs, d be defective PSNs, and O be contact opportunities per PSN.</p>
+            <code class="formula">O = 3</code>
+            <code class="formula">p = d / n</code>
+            <code class="formula">Total Defects = d x O</code>
+            <code class="formula">DPMO = Total Defects / (n x O) x 1,000,000</code>
+            <code class="formula">Sigma Z = Phi^-1(1 - p) + 1.5</code>
+        `
+    },
+    "total-units": {
+        title: "Total Units Formula",
+        body: `
+            <p>Total Units is the count of rows included in the analysis after filters are applied.</p>
+            <code class="formula">n = count(US contact-list rows included in selected mode)</code>
+            <ul>
+                <li>Tracker ON: n = US contact rows whose PSN is in tracker Yes population.</li>
+                <li>Tracker OFF: n = all US contact-list rows.</li>
+            </ul>
+        `
+    },
+    "defective-units": {
+        title: "Defective Units Formula",
+        body: `
+            <p>A unit is defective when no contact section has all required fields valid.</p>
+            <code class="formula">Section Pass = valid(name) AND valid(phone) AND valid(email)</code>
+            <code class="formula">Unit Defective = NOT(any Section Pass)</code>
+            <code class="formula">d = count(Unit Defective = true)</code>
+        `
+    },
+    "total-defects": {
+        title: "Total Defects Formula",
+        body: `
+            <p>SigmaSight uses 3 contact-quality opportunities per defective unit: name, phone, and email.</p>
+            <code class="formula">O = 3</code>
+            <code class="formula">Total Defects = defective units x O</code>
+            <code class="formula">Total Defects = d x 3</code>
+        `
+    },
+    "percent-defective": {
+        title: "% Defective Formula",
+        body: `
+            <p>This is the unit-level defect proportion expressed as a percentage.</p>
+            <code class="formula">p = d / n</code>
+            <code class="formula">% Defective = (d / n) x 100</code>
+        `
+    },
+    dpmo: {
+        title: "DPMO Formula",
+        body: `
+            <p>DPMO means defects per million opportunities.</p>
+            <code class="formula">DPMO = Total Defects / (Total Units x Opportunities per Unit) x 1,000,000</code>
+            <code class="formula">DPMO = (d x 3) / (n x 3) x 1,000,000 = (d / n) x 1,000,000</code>
+        `
+    },
+    "sigma-metric": {
+        title: "Sigma Formula",
+        body: `
+            <p>SigmaSight estimates short-term sigma from the unit defect probability.</p>
+            <code class="formula">p = d / n</code>
+            <code class="formula">Yield = 1 - p</code>
+            <code class="formula">Z_short-term = Phi^-1(Yield) + 1.5</code>
+            <p>Phi^-1 is the inverse standard normal cumulative distribution function. The +1.5 is the conventional Six Sigma shift.</p>
+        `
+    },
+    "tracker-yes-psns": {
+        title: "Tracker Yes PSNs Formula",
+        body: `
+            <p>This metric exists when the audit tracker filter is turned on.</p>
+            <code class="formula">Tracker Yes PSNs = count(unique PSN where QuInsights POC Updated/Reviewed in {YES, Y})</code>
+            <p>When the tracker filter is off, this field shows Off because the tracker is not used.</p>
+        `
+    },
+    "analyzed-psns": {
+        title: "Analyzed PSNs Formula",
+        body: `
+            <p>This is the final count after country and optional tracker filtering.</p>
+            <code class="formula">Tracker ON: Analyzed PSNs = count(US contact PSNs intersect tracker Yes PSNs)</code>
+            <code class="formula">Tracker OFF: Analyzed PSNs = count(US contact PSNs)</code>
+        `
+    },
+    sigma: {
+        title: "Sigma Capability Chart Formula",
+        body: `
+            <p>The chart plots baseline Sigma and current Sigma as point values against the project goal.</p>
+            <code class="formula">p = defective units / total units</code>
+            <code class="formula">Sigma = Phi^-1(1 - p) + 1.5</code>
+            <code class="formula">Goal line = 2.8 sigma</code>
+        `
+    },
+    "defective-rate": {
+        title: "Defective Rate Chart Formula",
+        body: `
+            <p>The chart plots the baseline and current defective-rate values.</p>
+            <code class="formula">Defective Rate = defective units / total units</code>
+            <code class="formula">% Defective = Defective Rate x 100</code>
+            <code class="formula">Goal line = 10%</code>
+        `
+    },
+    pareto: {
+        title: "Pareto Chart Formula",
+        body: `
+            <p>The Pareto chart ranks defect contributors from largest to smallest.</p>
+            <code class="formula">Count_i = defective PSNs for ASC_i</code>
+            <code class="formula">Total = sum(Count_i for all displayed ASCs)</code>
+            <code class="formula">Cumulative %_k = (sum from i=1 to k Count_i / Total) x 100</code>
+            <p>The bar chart shows Count_i. The line chart shows cumulative percentage.</p>
+        `
+    },
+    "defect-types": {
+        title: "Defect Type Formula",
+        body: `
+            <p>Defect types are counted from failed field checks across defective contact sections.</p>
+            <code class="formula">Name valid = name not blank and not NA/N/A/None</code>
+            <code class="formula">Phone valid = count(digits(phone)) >= 7</code>
+            <code class="formula">Email valid = text matches pattern name@domain.ext</code>
+            <p>Each failed rule increments its defect-reason count.</p>
+        `
+    },
+    heatmap: {
+        title: "Heatmap Formula",
+        body: `
+            <p>The heatmap is a frequency distribution of defective PSNs by state.</p>
+            <code class="formula">State Count_s = count(defective PSNs where state = s)</code>
+            <code class="formula">Color Intensity_s = (State Count_s - min count) / (max count - min count)</code>
+            <p>Darker states have higher normalized defect counts.</p>
+        `
+    },
+    top10: {
+        title: "Top 10 ASC Formula",
+        body: `
+            <p>Top 10 ASCs are the highest-frequency contributors after company-name normalization.</p>
+            <code class="formula">ASC Count_i = count(defective PSNs assigned to normalized ASC_i)</code>
+            <code class="formula">Top 10 = first 10 ASC_i sorted by ASC Count_i descending</code>
+        `
+    },
+    "defect-table": {
+        title: "Defective PSNs by State Formula",
+        body: `
+            <p>This table is the raw state frequency table behind the heatmap.</p>
+            <code class="formula">Rows_s = {PSN | PSN is defective AND PSN state = s}</code>
+            <code class="formula">Count_s = size(Rows_s)</code>
+        `
+    },
+    "auditor-defects": {
+        title: "Defective PSNs by Auditor Formula",
+        body: `
+            <p>This is available only when the tracker filter is on because the auditor comes from the tracker.</p>
+            <code class="formula">Auditor Count_a = count(defective tracker-Yes PSNs assigned to auditor a)</code>
+            <code class="formula">PSN List_a = {PSN | PSN defective AND assigned auditor = a}</code>
+        `
+    },
+    discrepancies: {
+        title: "PSN Discrepancy Set Formulas",
+        body: `
+            <p>Let T be tracker Yes PSNs, C be all contact-list PSNs, and U be United States contact-list PSNs.</p>
+            <code class="formula">Missing from contact list = T - C</code>
+            <code class="formula">Found but not US contact = (T intersection C) - U</code>
+            <code class="formula">US contact not tracker Yes = U - T</code>
+        `
+    }
+};
+
+function openInfoModal(key) {
+    const content = infoContent[key];
+    if (!content) return;
+
+    document.getElementById("infoTitle").textContent = content.title;
+    document.getElementById("infoBody").innerHTML = content.body;
+    const backdrop = document.getElementById("infoBackdrop");
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+}
+
+function closeInfoModal() {
+    const backdrop = document.getElementById("infoBackdrop");
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+}
+
+document.querySelectorAll("[data-info]").forEach(button => {
+    button.addEventListener("click", () => openInfoModal(button.dataset.info));
+});
+
+document.getElementById("infoBackdrop").addEventListener("click", event => {
+    if (event.target.id === "infoBackdrop") closeInfoModal();
+});
+
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closeInfoModal();
+});
+
+function updateTrackerFilterUi() {
+    const useTrackerFilter = document.getElementById("trackerToggle").checked;
+    document.getElementById("trackerField").classList.toggle("hidden", !useTrackerFilter);
+    setStatus(
+        useTrackerFilter
+            ? "Upload both files. SigmaSight will analyze only PSNs marked Yes in the tracker QuInsights column."
+            : "Upload the customer contact list. SigmaSight will analyze the full US contact list."
+    );
+}
+
+document.getElementById("trackerToggle").addEventListener("change", updateTrackerFilterUi);
+updateTrackerFilterUi();
+
+document.querySelectorAll(".tab-button").forEach(button => {
+    button.addEventListener("click", () => {
+        const tab = button.dataset.tab;
+        document.querySelectorAll(".tab-button").forEach(item => item.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(tab).classList.add("active");
+
+        setTimeout(() => {
+            zChart?.resize();
+            defChart?.resize();
+            paretoChart?.resize();
+            typesChart?.resize();
+            if (tab === "heatmap") refreshMapLabels();
+        }, 50);
+    });
+});
+
+window.addEventListener("resize", () => {
+    requestAnimationFrame(refreshMapLabels);
+});
+
+document.addEventListener("mouseover", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    showPsnTooltip(chip, event.clientX, event.clientY);
+});
+
+document.addEventListener("mousemove", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    movePsnTooltip(event.clientX, event.clientY);
+});
+
+document.addEventListener("mouseout", event => {
+    if (!event.target.closest(".psn-chip")) return;
+    hidePsnTooltip();
+});
+
+document.addEventListener("focusin", event => {
+    const chip = event.target.closest(".psn-chip");
+    if (!chip) return;
+    const box = chip.getBoundingClientRect();
+    showPsnTooltip(chip, box.left + box.width / 2, box.top);
+});
+
+document.addEventListener("focusout", event => {
+    if (!event.target.closest(".psn-chip")) return;
+    hidePsnTooltip();
+});
+
+function showPsnTooltip(chip, x, y) {
+    const tooltip = document.getElementById("psnTooltip");
+    tooltip.innerHTML = `
+        <strong>PSN ${escapeHtml(chip.dataset.psn)}</strong>
+        ASC: ${escapeHtml(chip.dataset.asc)}<br>
+        City: ${escapeHtml(chip.dataset.city)}<br>
+        State: ${escapeHtml(chip.dataset.state)}
+    `;
+    tooltip.style.display = "block";
+    movePsnTooltip(x, y);
+}
+
+function movePsnTooltip(x, y) {
+    const tooltip = document.getElementById("psnTooltip");
+    const margin = 14;
+    const width = tooltip.offsetWidth || 260;
+    const left = Math.min(window.innerWidth - width - margin, x + margin);
+    const top = Math.max(margin, y - tooltip.offsetHeight - margin);
+    tooltip.style.left = `${Math.max(margin, left)}px`;
+    tooltip.style.top = `${top}px`;
+}
+
+function hidePsnTooltip() {
+    document.getElementById("psnTooltip").style.display = "none";
 }
 </script>
 </body>
