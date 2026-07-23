@@ -1,18 +1,20 @@
 from pathlib import Path
+import sys
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import math
 import re
 from collections import defaultdict
 from datetime import datetime
+from difflib import SequenceMatcher
 from typing import Optional
 
 app = FastAPI()
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 OPPORTUNITIES_PER_UNIT = 3
 REQUIRED_COLUMNS = 9
 
@@ -23,7 +25,21 @@ COL_STATE = 4
 COL_COUNTRY = 5
 COL_CONTACTS = 8
 
-US_COUNTRIES = {"UNITED STATES", "USA", "US"}
+US_COUNTRIES = {
+    "UNITED STATES",
+    "UNITED STATES OF AMERICA",
+    "USA",
+    "US",
+    "U.S.",
+    "PUERTO RICO",
+    "GUAM",
+    "AMERICAN SAMOA",
+    "NORTHERN MARIANA ISLANDS",
+    "U.S. VIRGIN ISLANDS",
+    "US VIRGIN ISLANDS",
+    "VIRGIN ISLANDS, U.S.",
+    "UNITED STATES MINOR OUTLYING ISLANDS",
+}
 YES_VALUES = {"YES", "Y"}
 
 BASELINE = {
@@ -47,6 +63,10 @@ latest_discrepancies = {
     "tracker_yes_missing_from_contact_list": [],
     "tracker_yes_found_but_not_us_contact": [],
     "contact_us_not_tracker_yes": [],
+}
+latest_possible_matches = {
+    "missing_tracker_psn_possible_contact_matches": [],
+    "same_file_location_different_company_psn": [],
 }
 latest_summary = None
 analysis_history = []
@@ -182,6 +202,66 @@ def normalize_psn(value):
     return text
 
 
+
+def normalize_key(value):
+    text = clean_text(value, "")
+    return re.sub(r'[^a-z0-9]', '', text.lower())
+
+
+def is_us_reference_country(value):
+    return clean_text(value, "").strip().upper() in US_COUNTRIES
+
+
+def is_visible_reference_record(record):
+    if not is_us_reference_country(record.get("country", "")):
+        return False
+
+    searchable = " ".join([
+        clean_text(record.get("company", ""), ""),
+        clean_text(record.get("country", ""), ""),
+    ]).lower()
+    return "canada" not in searchable
+
+
+def company_identity_key(value):
+    normalized = normalize_company(value)
+    return normalize_key(normalized)
+
+
+def text_similarity(left, right):
+    left_key = normalize_key(left)
+    right_key = normalize_key(right)
+
+    if not left_key or not right_key:
+        return 0
+
+    return SequenceMatcher(None, left_key, right_key).ratio()
+
+
+def company_similarity(left, right):
+    left_key = company_identity_key(left)
+    right_key = company_identity_key(right)
+
+    if not left_key or not right_key:
+        return 0
+
+    return SequenceMatcher(None, left_key, right_key).ratio()
+
+
+def find_first_column(df, header_row, candidates):
+    normalized_candidates = [normalize_header(item) for item in candidates]
+
+    for col_index in range(len(df.columns)):
+        header = normalize_header(df.iat[header_row, col_index])
+
+        if header in normalized_candidates:
+            return col_index
+
+        if any(candidate and candidate in header for candidate in normalized_candidates):
+            return col_index
+
+    return None
+
 def evaluate_contacts(blob):
     if pd.isna(blob) or str(blob).strip() == "":
         return True, ["Missing contact details"]
@@ -247,15 +327,11 @@ def find_tracker_columns(df):
     search_rows = min(25, len(df.index))
 
     for row_index in range(search_rows):
-        auditor_col = None
         psn_col = None
         quinsights_col = None
 
         for col_index in range(len(df.columns)):
             header = normalize_header(df.iat[row_index, col_index])
-
-            if "assignedauditor" in header or header == "auditor":
-                auditor_col = col_index
 
             if header == "psn":
                 psn_col = col_index
@@ -264,7 +340,17 @@ def find_tracker_columns(df):
                 quinsights_col = col_index
 
         if psn_col is not None and quinsights_col is not None:
-            return row_index, psn_col, quinsights_col, auditor_col
+            return {
+                "header_row": row_index,
+                "psn": psn_col,
+                "quinsights": quinsights_col,
+                "auditor": find_first_column(df, row_index, ["Assigned Auditor", "Auditor"]),
+                "company": find_first_column(df, row_index, ["Company/ Service Center Name", "Company Name", "Company"]),
+                "city": find_first_column(df, row_index, ["City"]),
+                "state": find_first_column(df, row_index, ["State", "State/Province"]),
+                "file": find_first_column(df, row_index, ["File", "File Number", "File #"]),
+                "address": find_first_column(df, row_index, ["Address", "Street Address"]),
+            }
 
     raise HTTPException(
         status_code=400,
@@ -273,10 +359,14 @@ def find_tracker_columns(df):
 
 
 def extract_quinsights_yes_psns(tracker_df):
-    header_row, psn_col, quinsights_col, auditor_col = find_tracker_columns(tracker_df)
+    columns = find_tracker_columns(tracker_df)
+    header_row = columns["header_row"]
+    psn_col = columns["psn"]
+    quinsights_col = columns["quinsights"]
     yes_psns = set()
     tracker_psns = set()
     yes_psn_details = {}
+    tracker_psn_details = {}
 
     for _, row in tracker_df.iloc[header_row + 1:].iterrows():
         psn = normalize_psn(row[psn_col])
@@ -284,13 +374,20 @@ def extract_quinsights_yes_psns(tracker_df):
             continue
 
         tracker_psns.add(psn)
+        tracker_psn_details[psn] = {
+            "psn": psn,
+            "auditor": cell_value(row, columns["auditor"], "Unknown"),
+            "company": cell_value(row, columns["company"], "Unknown"),
+            "city": cell_value(row, columns["city"], "Unknown"),
+            "state": cell_value(row, columns["state"], "Unknown"),
+            "file": cell_value(row, columns["file"], ""),
+            "address": cell_value(row, columns["address"], ""),
+        }
         status = clean_text(row[quinsights_col], "").strip().upper()
 
         if status in YES_VALUES:
             yes_psns.add(psn)
-            yes_psn_details[psn] = {
-                "auditor": clean_text(row[auditor_col]) if auditor_col is not None else "Unknown",
-            }
+            yes_psn_details[psn] = tracker_psn_details[psn]
 
     if not yes_psns:
         raise HTTPException(
@@ -298,9 +395,229 @@ def extract_quinsights_yes_psns(tracker_df):
             detail="No PSNs with QuInsights POC Updated/Reviewed = Yes were found in the audit tracker.",
         )
 
-    return yes_psns, yes_psn_details, {
+    return yes_psns, yes_psn_details, tracker_psn_details, {
         "tracker_psns": len(tracker_psns),
         "quinsights_yes_psns": len(yes_psns),
+    }
+
+
+def find_contact_columns(df):
+    search_rows = min(10, len(df.index))
+
+    for row_index in range(search_rows):
+        psn_col = find_first_column(df, row_index, ["PSN", "Party Site Number"])
+        company_col = find_first_column(df, row_index, ["Company Name", "Company/ Service Center Name", "Company"])
+
+        if psn_col is not None and company_col is not None:
+            return {
+                "header_row": row_index,
+                "psn": psn_col,
+                "company": company_col,
+                "address": find_first_column(df, row_index, ["Address", "Street Address"]),
+                "city": find_first_column(df, row_index, ["City"]),
+                "state": find_first_column(df, row_index, ["State/Province", "State"]),
+                "country": find_first_column(df, row_index, ["Country"]),
+                "file": find_first_column(df, row_index, ["File", "File Number", "File #", "SCN"]),
+            }
+
+    return {
+        "header_row": 0,
+        "psn": COL_PSN,
+        "company": COL_COMPANY,
+        "address": 2,
+        "city": COL_CITY,
+        "state": COL_STATE,
+        "country": COL_COUNTRY,
+        "file": None,
+    }
+
+
+def cell_value(row, col_index, fallback=""):
+    if col_index is None:
+        return fallback
+
+    try:
+        return clean_text(row[col_index], fallback)
+    except Exception:
+        return fallback
+
+
+def build_contact_records(df):
+    columns = find_contact_columns(df)
+    records = []
+
+    for _, row in df.iloc[columns["header_row"] + 1:].iterrows():
+        psn = normalize_psn(row[columns["psn"]])
+        if not psn:
+            continue
+
+        country = cell_value(row, columns["country"], "Unknown")
+
+        records.append({
+            "psn": psn,
+            "company": cell_value(row, columns["company"], "Unknown"),
+            "address": cell_value(row, columns["address"], ""),
+            "city": cell_value(row, columns["city"], "Unknown"),
+            "state": cell_value(row, columns["state"], "Unknown"),
+            "country": country,
+            "file": cell_value(row, columns["file"], ""),
+            "is_us_reference": is_us_reference_country(country),
+        })
+
+    return records
+
+
+def record_list(records_by_psn, psns):
+    return [records_by_psn[psn] for psn in sorted(psns, key=str) if psn in records_by_psn]
+
+
+def tracker_record_list(yes_psn_details, psns):
+    return [yes_psn_details[psn] for psn in sorted(psns, key=str) if psn in yes_psn_details]
+
+
+def possible_match_score(tracker_record, contact_record):
+    score = 0
+    reasons = []
+    company_match_ratio = company_similarity(tracker_record.get("company"), contact_record.get("company"))
+
+    same_city = normalize_key(tracker_record.get("city")) and normalize_key(tracker_record.get("city")) == normalize_key(contact_record.get("city"))
+    same_state = normalize_key(tracker_record.get("state")) and normalize_key(tracker_record.get("state")) == normalize_key(contact_record.get("state"))
+    same_address = normalize_key(tracker_record.get("address")) and normalize_key(tracker_record.get("address")) == normalize_key(contact_record.get("address"))
+    same_file = normalize_key(tracker_record.get("file")) and normalize_key(tracker_record.get("file")) == normalize_key(contact_record.get("file"))
+
+    if company_match_ratio >= 0.94:
+        score += 45
+        reasons.append("same/similar company name")
+    elif company_match_ratio >= 0.82:
+        score += 30
+        reasons.append("possible company-name match")
+    elif company_match_ratio >= 0.72:
+        score += 18
+        reasons.append("weak company-name similarity")
+
+    if same_city:
+        score += 18
+        reasons.append("same city")
+
+    if same_state:
+        score += 15
+        reasons.append("same state")
+
+    if same_address:
+        score += 35
+        reasons.append("same address")
+
+    if same_file:
+        score += 35
+        reasons.append("same file/SCN")
+
+    if same_file and same_state:
+        score += 15
+        reasons.append("same file/SCN and state")
+
+    if same_address and company_match_ratio < 0.82:
+        reasons.append("possible name change or acquisition")
+
+    if same_file and company_match_ratio < 0.82:
+        reasons.append("possible file carried to different PSN/company")
+
+    return score, reasons, company_match_ratio
+
+
+def build_possible_matches(yes_psn_details, contact_records, missing_psns):
+    reference_contacts = [record for record in contact_records if is_visible_reference_record(record)]
+    missing_matches = []
+
+    for psn in sorted(missing_psns, key=str):
+        tracker_record = yes_psn_details.get(psn)
+        if not tracker_record:
+            continue
+
+        candidates = []
+
+        for contact_record in reference_contacts:
+            if contact_record["psn"] == psn:
+                continue
+
+            score, reasons, company_similarity = possible_match_score(tracker_record, contact_record)
+
+            strong_location_or_file = ("same address" in reasons) or ("same file/SCN" in reasons) or ("same city" in reasons and "same state" in reasons)
+            strong_company = company_similarity >= 0.82
+
+            if score >= 60 and (strong_location_or_file or strong_company):
+                candidates.append({
+                    "score": score,
+                    "reasons": reasons,
+                    "company_similarity": round(company_similarity, 3),
+                    "contact_psn": contact_record["psn"],
+                    "contact_company": contact_record["company"],
+                    "contact_address": contact_record["address"],
+                    "contact_city": contact_record["city"],
+                    "contact_state": contact_record["state"],
+                    "contact_country": contact_record["country"],
+                    "contact_file": contact_record["file"],
+                })
+
+        candidates = sorted(candidates, key=lambda item: (-item["score"], -item["company_similarity"], item["contact_psn"]))[:8]
+
+        if candidates:
+            missing_matches.append({
+                "tracker_psn": psn,
+                "tracker_company": tracker_record.get("company", "Unknown"),
+                "tracker_address": tracker_record.get("address", ""),
+                "tracker_city": tracker_record.get("city", "Unknown"),
+                "tracker_state": tracker_record.get("state", "Unknown"),
+                "tracker_file": tracker_record.get("file", ""),
+                "tracker_auditor": tracker_record.get("auditor", "Unknown"),
+                "possible_matches": candidates,
+            })
+
+    grouped = defaultdict(list)
+
+    for contact_record in reference_contacts:
+        file_key = normalize_key(contact_record.get("file"))
+        city_key = normalize_key(contact_record.get("city"))
+        state_key = normalize_key(contact_record.get("state"))
+        address_key = normalize_key(contact_record.get("address"))
+
+        if not state_key or not (file_key or address_key):
+            continue
+
+        grouped[(file_key, address_key, city_key, state_key)].append(contact_record)
+
+    file_location_conflicts = []
+
+    for records in grouped.values():
+        companies = {normalize_key(record.get("company")) for record in records if normalize_key(record.get("company"))}
+        psns = {record.get("psn") for record in records if record.get("psn")}
+
+        if len(records) > 1 and len(companies) > 1 and len(psns) > 1:
+            first = records[0]
+            file_location_conflicts.append({
+                "file": first.get("file", ""),
+                "address": first.get("address", ""),
+                "city": first.get("city", "Unknown"),
+                "state": first.get("state", "Unknown"),
+                "records": sorted([
+                    {
+                        "psn": record.get("psn", ""),
+                        "company": record.get("company", "Unknown"),
+                        "address": record.get("address", ""),
+                        "city": record.get("city", "Unknown"),
+                        "state": record.get("state", "Unknown"),
+                        "country": record.get("country", "Unknown"),
+                        "file": record.get("file", ""),
+                    }
+                    for record in records
+                ], key=lambda item: (item["company"], item["psn"])),
+            })
+
+    return {
+        "missing_tracker_psn_possible_contact_matches": missing_matches,
+        "same_file_location_different_company_psn": sorted(
+            file_location_conflicts,
+            key=lambda item: (item["file"], item["state"], item["city"]),
+        ),
     }
 
 
@@ -337,7 +654,7 @@ async def upload(
 
     global latest_state_map, latest_state_details, latest_companies
     global latest_company_counts, latest_defect_types, latest_auditor_defects
-    global latest_discrepancies, latest_summary, analysis_history
+    global latest_discrepancies, latest_possible_matches, latest_summary, analysis_history
 
     selected_contact_file = contact_file or file
 
@@ -366,16 +683,21 @@ async def upload(
         )
 
     if use_tracker_filter:
-        eligible_psns, yes_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
+        eligible_psns, yes_psn_details, tracker_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
     else:
         eligible_psns = None
         yes_psn_details = {}
+        tracker_psn_details = {}
         tracker_meta = {
             "tracker_psns": None,
             "quinsights_yes_psns": None,
         }
 
     report_date = extract_report_date(df)
+    contact_records = build_contact_records(df)
+    contact_records_by_psn = {record["psn"]: record for record in contact_records}
+    contact_reference_records = [record for record in contact_records if is_visible_reference_record(record)]
+    contact_reference_records_by_psn = {record["psn"]: record for record in contact_reference_records}
 
     total = 0
     defective_units = 0
@@ -397,7 +719,7 @@ async def upload(
 
         country = str(row[COL_COUNTRY]).strip().upper()
 
-        if country not in US_COUNTRIES:
+        if not is_us_reference_country(country):
             continue
 
         contact_us_rows += 1
@@ -442,16 +764,24 @@ async def upload(
     latest_state_details = dict(state_details)
     latest_auditor_defects = build_auditor_defects(auditor_defect_map)
     if use_tracker_filter:
+        tracker_all_psns = set(tracker_psn_details.keys())
+        missing_tracker_psns = tracker_all_psns - contact_all_psns
+        contact_reference_not_tracker_psns = contact_us_psns - tracker_all_psns
         latest_discrepancies = {
-            "tracker_yes_missing_from_contact_list": sorted(eligible_psns - contact_all_psns, key=str),
-            "tracker_yes_found_but_not_us_contact": sorted((eligible_psns & contact_all_psns) - contact_us_psns, key=str),
-            "contact_us_not_tracker_yes": sorted(contact_us_psns - eligible_psns, key=str),
+            "tracker_yes_missing_from_contact_list": tracker_record_list(tracker_psn_details, missing_tracker_psns),
+            "tracker_yes_found_but_not_us_contact": [],
+            "contact_us_not_tracker_yes": record_list(contact_reference_records_by_psn, contact_reference_not_tracker_psns),
         }
+        latest_possible_matches = build_possible_matches(tracker_psn_details, contact_reference_records, missing_tracker_psns)
     else:
         latest_discrepancies = {
             "tracker_yes_missing_from_contact_list": [],
             "tracker_yes_found_but_not_us_contact": [],
             "contact_us_not_tracker_yes": [],
+        }
+        latest_possible_matches = {
+            "missing_tracker_psn_possible_contact_matches": [],
+            "same_file_location_different_company_psn": [],
         }
 
     latest_company_counts = sorted(company_map.items(), key=lambda x: x[1], reverse=True)
@@ -475,6 +805,8 @@ async def upload(
             "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
             "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),
             "contact_us_not_tracker_yes": len(latest_discrepancies["contact_us_not_tracker_yes"]),
+            "possible_match_groups": len(latest_possible_matches["missing_tracker_psn_possible_contact_matches"]),
+            "same_file_location_conflicts": len(latest_possible_matches["same_file_location_different_company_psn"]),
             **tracker_meta,
             "baseline": BASELINE,
         }
@@ -507,6 +839,8 @@ async def upload(
         "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
         "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),
         "contact_us_not_tracker_yes": len(latest_discrepancies["contact_us_not_tracker_yes"]),
+        "possible_match_groups": len(latest_possible_matches["missing_tracker_psn_possible_contact_matches"]),
+        "same_file_location_conflicts": len(latest_possible_matches["same_file_location_different_company_psn"]),
         **tracker_meta,
         "baseline": BASELINE,
     }
@@ -547,9 +881,122 @@ def auditor_defects():
     return latest_auditor_defects
 
 
+def export_rows_for_dataset(dataset):
+    if dataset == "tracker-missing":
+        return [
+            {
+                "Source": "Audit Tracker",
+                "PSN": row.get("psn", ""),
+                "Company / ASC": row.get("company", ""),
+                "Address": row.get("address", ""),
+                "City": row.get("city", ""),
+                "State": row.get("state", ""),
+                "File Number": row.get("file", ""),
+                "Auditor": row.get("auditor", ""),
+            }
+            for row in latest_discrepancies.get("tracker_yes_missing_from_contact_list", [])
+        ]
+
+    if dataset == "contact-not-tracker":
+        return [
+            {
+                "Source": "Customer Contact List",
+                "PSN": row.get("psn", ""),
+                "Company / ASC": row.get("company", ""),
+                "Address": row.get("address", ""),
+                "City": row.get("city", ""),
+                "State": row.get("state", ""),
+                "Country": row.get("country", ""),
+                "File / SCN": row.get("file", ""),
+            }
+            for row in latest_discrepancies.get("contact_us_not_tracker_yes", [])
+            if is_visible_reference_record(row)
+        ]
+
+    if dataset == "possible-matches":
+        rows = []
+        for group in latest_possible_matches.get("missing_tracker_psn_possible_contact_matches", []):
+            for match in group.get("possible_matches", []):
+                if not is_visible_reference_record({"company": match.get("contact_company", ""), "country": match.get("contact_country", "")}):
+                    continue
+                rows.append({
+                    "Tracker PSN": group.get("tracker_psn", ""),
+                    "Tracker Company / ASC": group.get("tracker_company", ""),
+                    "Tracker City": group.get("tracker_city", ""),
+                    "Tracker State": group.get("tracker_state", ""),
+                    "Tracker File Number": group.get("tracker_file", ""),
+                    "Tracker Auditor": group.get("tracker_auditor", ""),
+                    "Possible Current PSN": match.get("contact_psn", ""),
+                    "Current Company / ASC": match.get("contact_company", ""),
+                    "Current Address": match.get("contact_address", ""),
+                    "Current City": match.get("contact_city", ""),
+                    "Current State": match.get("contact_state", ""),
+                    "Current Country": match.get("contact_country", ""),
+                    "Current File / SCN": match.get("contact_file", ""),
+                    "Match Score": match.get("score", ""),
+                    "Why Matched": "; ".join(match.get("reasons", [])),
+                })
+        return rows
+
+    if dataset == "file-location-conflicts":
+        rows = []
+        for group in latest_possible_matches.get("same_file_location_different_company_psn", []):
+            for row in group.get("records", []):
+                if not is_visible_reference_record(row):
+                    continue
+                rows.append({
+                    "PSN": row.get("psn", ""),
+                    "Company / ASC": row.get("company", ""),
+                    "Address": row.get("address", group.get("address", "")),
+                    "City": row.get("city", group.get("city", "")),
+                    "State": row.get("state", group.get("state", "")),
+                    "Country": row.get("country", ""),
+                    "File / SCN": row.get("file", group.get("file", "")),
+                    "Conflict Group": f"{group.get('file', '')} | {group.get('city', '')}, {group.get('state', '')}",
+                })
+        return rows
+
+    raise HTTPException(status_code=404, detail="Unknown export list.")
+
+
+@app.get("/export/{dataset}/{fmt}")
+def export_dataset(dataset: str, fmt: str):
+    rows = export_rows_for_dataset(dataset)
+    df = pd.DataFrame(rows)
+    safe_dataset = re.sub(r"[^a-z0-9_-]", "-", dataset.lower())
+
+    if fmt == "csv":
+        csv_text = df.to_csv(index=False)
+        return Response(
+            content=csv_text,
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename=sigmasight-{safe_dataset}.csv"},
+        )
+
+    if fmt in {"xlsx", "excel"}:
+        from io import BytesIO
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="SigmaSight")
+        return Response(
+            content=output.getvalue(),
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=sigmasight-{safe_dataset}.xlsx"},
+        )
+
+    raise HTTPException(status_code=400, detail="Export format must be csv or xlsx.")
+
+
 @app.get("/psn-discrepancies")
 def psn_discrepancies():
     return latest_discrepancies
+
+
+
+
+@app.get("/possible-matches")
+def possible_matches():
+    return latest_possible_matches
 
 
 @app.get("/control-data")

@@ -23,6 +23,7 @@ With the audit tracker filter off, it accepts only the customer contact list and
 - Top 10 companies by defective PSNs
 - Defective PSNs by assigned auditor
 - PSN discrepancies between the tracker and contact list
+- Possible alternate PSN matches for tracker rows missing from the contact list
 
 ## Expected Excel Layout
 
@@ -67,7 +68,25 @@ Then open:
 http://127.0.0.1:8000
 ```
 
-After analysis, the dashboard shows Control Phase tabs for Capability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, and Discrepancies.
+## Build Windows Desktop App
+
+To create a Windows executable, use a Windows laptop.
+
+1. Install Python for Windows.
+2. Open this project folder.
+3. Double-click `build_windows.bat`.
+4. Wait for the build to finish.
+5. Open:
+
+```text
+dist\SigmaSightExtra\SigmaSightExtra.exe
+```
+
+The executable opens SigmaSightExtra in its own desktop window. It does not use Render and does not need an internet browser tab.
+
+After analysis, the dashboard shows Control Phase tabs for Capability, Pareto, Defect Types, Heatmap, Top 10, Table, Auditor Defects, Discrepancies, and Possible Matches.
+
+The Discrepancies and Possible Matches tabs use the Customer Contact List as the current reference. Displayed lists exclude Canada records, show readable record cards, and include CSV/XLSX download buttons for each list. The Possible Matches tab compares company name, city, state, address, and file-like identifiers to suggest contact-list records that may be the same company with a different assigned PSN. It also flags groups that share the same file/location but have different company names and party site numbers.
 
 Each KPI, chart, and result table includes a Formula button that explains the statistical calculation used by SigmaSightExtra.
 

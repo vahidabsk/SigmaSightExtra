@@ -590,6 +590,120 @@
             font-size: 14px;
         }
 
+        .export-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 12px;
+        }
+
+        .export-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 30px;
+            padding: 6px 9px;
+            border: 1px solid #cfe7e3;
+            border-radius: 6px;
+            background: #f6fbfa;
+            color: var(--accent-dark);
+            font-size: 11px;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .export-button:disabled {
+            opacity: 0.55;
+        }
+
+        .record-list {
+            display: grid;
+            gap: 10px;
+            max-height: 520px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+
+        .record-card {
+            border: 1px solid #dbe5ee;
+            border-radius: 8px;
+            background: #fbfefd;
+            padding: 12px;
+        }
+
+        .record-card-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .record-primary {
+            font-weight: 900;
+            color: var(--ink);
+            line-height: 1.3;
+        }
+
+        .record-muted {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .record-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            gap: 8px;
+        }
+
+        .record-field {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: #ffffff;
+            padding: 7px 8px;
+            min-height: 52px;
+        }
+
+        .record-label {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .record-value {
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+
+        .match-list {
+            display: grid;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .match-card {
+            border: 1px solid #cfe7e3;
+            border-radius: 8px;
+            background: #ffffff;
+            padding: 10px;
+        }
+
+        .score-badge {
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: #eef8f6;
+            color: var(--accent-dark);
+            padding: 5px 8px;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
         .modal-backdrop {
             position: fixed;
             inset: 0;
@@ -750,6 +864,7 @@
             <button class="tab-button" data-tab="defectTable">Table</button>
             <button class="tab-button" data-tab="auditorDefects">Auditor Defects</button>
             <button class="tab-button" data-tab="discrepancies">Discrepancies</button>
+            <button class="tab-button" data-tab="possibleMatches">Possible Matches</button>
         </div>
 
         <section id="capability" class="tab-panel active">
@@ -885,16 +1000,50 @@
                 </div>
                 <div class="discrepancy-grid">
                     <div class="discrepancy-card">
-                        <h4>Tracker Yes PSNs missing from contact list</h4>
-                        <div id="missingContactList" class="psn-stack"></div>
+                        <h4>Tracker PSNs missing from current contact list</h4>
+                        <div class="export-actions">
+                            <button type="button" class="export-button" onclick="downloadExport('tracker-missing', 'xlsx')">Download XLSX</button>
+                            <button type="button" class="export-button" onclick="downloadExport('tracker-missing', 'csv')">Download CSV</button>
+                        </div>
+                        <div id="missingContactList"></div>
                     </div>
                     <div class="discrepancy-card">
-                        <h4>Tracker Yes PSNs found but not US contact</h4>
-                        <div id="notAnalyzedList" class="psn-stack"></div>
+                        <h4>Current US/territory contact-list PSNs not in tracker</h4>
+                        <div class="export-actions">
+                            <button type="button" class="export-button" onclick="downloadExport('contact-not-tracker', 'xlsx')">Download XLSX</button>
+                            <button type="button" class="export-button" onclick="downloadExport('contact-not-tracker', 'csv')">Download CSV</button>
+                        </div>
+                        <div id="contactNotYesList"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="possibleMatches" class="tab-panel">
+            <div class="table-panel">
+                <div class="table-header">
+                    <h3>Possible Alternate PSN Matches</h3>
+                    <div class="heading-actions">
+                        <span id="possibleMatchSummary"></span>
+                        <button type="button" class="formula-button" data-info="possible-matches">Formula</button>
+                    </div>
+                </div>
+                <div class="discrepancy-grid">
+                    <div class="discrepancy-card">
+                        <h4>Missing tracker PSNs with possible contact-list matches</h4>
+                        <div class="export-actions">
+                            <button type="button" class="export-button" onclick="downloadExport('possible-matches', 'xlsx')">Download XLSX</button>
+                            <button type="button" class="export-button" onclick="downloadExport('possible-matches', 'csv')">Download CSV</button>
+                        </div>
+                        <div id="possibleMatchRows"></div>
                     </div>
                     <div class="discrepancy-card">
-                        <h4>US contact PSNs not marked Yes in tracker</h4>
-                        <div id="contactNotYesList" class="psn-stack"></div>
+                        <h4>Same file/location, different company and PSN</h4>
+                        <div class="export-actions">
+                            <button type="button" class="export-button" onclick="downloadExport('file-location-conflicts', 'xlsx')">Download XLSX</button>
+                            <button type="button" class="export-button" onclick="downloadExport('file-location-conflicts', 'csv')">Download CSV</button>
+                        </div>
+                        <div id="fileConflictRows"></div>
                     </div>
                 </div>
             </div>
@@ -925,6 +1074,48 @@ function setStatus(message, isError = false) {
     const status = document.getElementById("status");
     status.innerText = message;
     status.className = isError ? "status error" : "status";
+}
+
+
+function exportFilename(dataset, format) {
+    return `sigmasight-${dataset}.${format === "xlsx" ? "xlsx" : "csv"}`;
+}
+
+async function downloadExport(dataset, format) {
+    const buttons = Array.from(document.querySelectorAll(".export-button"));
+    const target = `/export/${encodeURIComponent(dataset)}/${encodeURIComponent(format)}`;
+
+    buttons.forEach(button => button.disabled = true);
+    setStatus(`Preparing ${format.toUpperCase()} download...`);
+
+    try {
+        const response = await fetch(target, { cache: "no-store" });
+        if (!response.ok) {
+            let message = "The export could not be created.";
+            try {
+                const payload = await response.json();
+                message = payload.detail || message;
+            } catch (_) {}
+            throw new Error(message);
+        }
+
+        const blob = await response.blob();
+        if (!blob.size) throw new Error("The export file is empty. Run analysis first, then try again.");
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = exportFilename(dataset, format);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setStatus(`${format.toUpperCase()} download ready: ${exportFilename(dataset, format)}`);
+    } catch (error) {
+        setStatus(error.message, true);
+    } finally {
+        buttons.forEach(button => button.disabled = false);
+    }
 }
 
 function formatNumber(value) {
@@ -1024,9 +1215,10 @@ function renderResults(data) {
 function setTrackerTabsVisible(isVisible) {
     document.querySelector('[data-tab="auditorDefects"]').classList.toggle("hidden", !isVisible);
     document.querySelector('[data-tab="discrepancies"]').classList.toggle("hidden", !isVisible);
+    document.querySelector('[data-tab="possibleMatches"]').classList.toggle("hidden", !isVisible);
 
     if (!isVisible) {
-        const activeTrackerTab = document.querySelector("#auditorDefects.active, #discrepancies.active");
+        const activeTrackerTab = document.querySelector("#auditorDefects.active, #discrepancies.active, #possibleMatches.active");
         if (activeTrackerTab) {
             document.querySelector('[data-tab="capability"]').click();
         }
@@ -1222,12 +1414,13 @@ function baseOptions() {
 }
 
 async function loadDashboardTabs() {
-    const [controlRes, detailsRes, companiesRes, auditorRes, discrepancyRes, svgRes] = await Promise.all([
+    const [controlRes, detailsRes, companiesRes, auditorRes, discrepancyRes, matchRes, svgRes] = await Promise.all([
         fetch("/control-data"),
         fetch("/defects-details"),
         fetch("/top-companies"),
         fetch("/auditor-defects"),
         fetch("/psn-discrepancies"),
+        fetch("/possible-matches"),
         fetch("/static/us.svg")
     ]);
 
@@ -1236,6 +1429,7 @@ async function loadDashboardTabs() {
     const companies = await companiesRes.json();
     const auditorDefects = auditorRes.ok ? await auditorRes.json() : [];
     const discrepancies = discrepancyRes.ok ? await discrepancyRes.json() : {};
+    const possibleMatches = matchRes.ok ? await matchRes.json() : {};
     const svgText = await svgRes.text();
 
     renderPareto(controlData);
@@ -1245,6 +1439,7 @@ async function loadDashboardTabs() {
     renderDefectTable(defectDetails);
     renderAuditorDefects(auditorDefects);
     renderDiscrepancies(discrepancies);
+    renderPossibleMatches(possibleMatches);
 }
 
 function renderPareto(data) {
@@ -1518,17 +1713,140 @@ function renderAuditorDefects(items) {
     });
 }
 
+function normalizeRecord(record) {
+    if (typeof record === "string" || typeof record === "number") {
+        return { psn: String(record), company: "", address: "", city: "", state: "", file: "", auditor: "" };
+    }
+    return record || {};
+}
+
+function recordField(label, value) {
+    const display = value || "-";
+    return `
+        <div class="record-field">
+            <span class="record-label">${escapeHtml(label)}</span>
+            <div class="record-value">${escapeHtml(display)}</div>
+        </div>
+    `;
+}
+
+function recordTable(records, options = {}) {
+    const rows = (records || []).map(normalizeRecord);
+    if (!rows.length) return `<div class="empty">${escapeHtml(options.empty || "No records found.")}</div>`;
+
+    const showAuditor = options.showAuditor !== false;
+    const showCountry = Boolean(options.showCountry);
+
+    return `
+        <div class="record-list">
+            ${rows.map(record => `
+                <article class="record-card">
+                    <div class="record-card-head">
+                        <div>
+                            <div class="record-primary">PSN ${escapeHtml(record.psn || "")}</div>
+                            <div class="record-muted">${escapeHtml(record.company || record.asc_name || "Unknown")}</div>
+                        </div>
+                        ${showCountry && record.country ? `<div class="record-muted">${escapeHtml(record.country)}</div>` : ""}
+                    </div>
+                    <div class="record-fields">
+                        ${recordField("Address", record.address || "")}
+                        ${recordField("City", record.city || "Unknown")}
+                        ${recordField("State", record.state || "Unknown")}
+                        ${recordField("File / SCN", record.file || "")}
+                        ${showAuditor ? recordField("Auditor", record.auditor || "") : ""}
+                    </div>
+                </article>
+            `).join("")}
+        </div>
+    `;
+}
+
+
 function renderDiscrepancies(data) {
     const missing = data.tracker_yes_missing_from_contact_list || [];
-    const notAnalyzed = data.tracker_yes_found_but_not_us_contact || [];
     const contactNotYes = data.contact_us_not_tracker_yes || [];
-    const total = missing.length + notAnalyzed.length + contactNotYes.length;
+    const total = missing.length + contactNotYes.length;
 
-    document.getElementById("discrepancySummary").textContent = `${total} PSN differences`;
-    document.getElementById("missingContactList").innerHTML = simplePsnChips(missing);
-    document.getElementById("notAnalyzedList").innerHTML = simplePsnChips(notAnalyzed);
-    document.getElementById("contactNotYesList").innerHTML = simplePsnChips(contactNotYes);
+    document.getElementById("discrepancySummary").textContent = `${total} record differences`;
+    document.getElementById("missingContactList").innerHTML = recordTable(missing, {
+        empty: "No tracker PSNs are missing from the current contact list.",
+        showAuditor: true
+    });
+    document.getElementById("contactNotYesList").innerHTML = recordTable(contactNotYes, {
+        empty: "No current US/territory contact-list PSNs are missing from the tracker.",
+        showAuditor: false
+    });
 }
+
+
+function matchReasons(reasons) {
+    const list = reasons || [];
+    if (!list.length) return "No reason listed";
+    return list.map(reason => escapeHtml(reason)).join(", ");
+}
+
+function renderPossibleMatches(data) {
+    const possible = data.missing_tracker_psn_possible_contact_matches || [];
+    const conflicts = data.same_file_location_different_company_psn || [];
+    const total = possible.length + conflicts.length;
+
+    document.getElementById("possibleMatchSummary").textContent = `${total} match groups`;
+
+    document.getElementById("possibleMatchRows").innerHTML = possible.length
+        ? `<div class="record-list">${possible.map(group => `
+            <article class="record-card">
+                <div class="record-card-head">
+                    <div>
+                        <div class="record-primary">Tracker PSN ${escapeHtml(group.tracker_psn)}</div>
+                        <div class="record-muted">${escapeHtml(group.tracker_company || "Unknown")}</div>
+                    </div>
+                    <div class="record-muted">${escapeHtml(group.tracker_auditor || "")}</div>
+                </div>
+                <div class="record-fields">
+                    ${recordField("Tracker City", group.tracker_city || "Unknown")}
+                    ${recordField("Tracker State", group.tracker_state || "Unknown")}
+                    ${recordField("Tracker File", group.tracker_file || "")}
+                    ${recordField("Tracker Address", group.tracker_address || "")}
+                </div>
+                <div class="match-list">
+                    ${(group.possible_matches || []).map(match => `
+                        <div class="match-card">
+                            <div class="record-card-head">
+                                <div>
+                                    <div class="record-primary">Possible Current PSN ${escapeHtml(match.contact_psn)}</div>
+                                    <div class="record-muted">${escapeHtml(match.contact_company || "Unknown")}</div>
+                                </div>
+                                <div class="score-badge">Score ${escapeHtml(match.score)}</div>
+                            </div>
+                            <div class="record-fields">
+                                ${recordField("Current Address", match.contact_address || "")}
+                                ${recordField("Current City", match.contact_city || "Unknown")}
+                                ${recordField("Current State", match.contact_state || "Unknown")}
+                                ${recordField("File / SCN", match.contact_file || "")}
+                                ${recordField("Why matched", matchReasons(match.reasons))}
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            </article>
+        `).join("")}</div>`
+        : `<div class="empty">No possible alternate contact-list PSN matches found.</div>`;
+
+    document.getElementById("fileConflictRows").innerHTML = conflicts.length
+        ? `<div class="record-list">${conflicts.map(group => `
+            <article class="record-card">
+                <div class="record-card-head">
+                    <div>
+                        <div class="record-primary">File/SCN ${escapeHtml(group.file || "Unknown")}</div>
+                        <div class="record-muted">${escapeHtml(group.city || "Unknown")}, ${escapeHtml(group.state || "Unknown")}</div>
+                    </div>
+                </div>
+                ${recordTable(group.records || [], { showAuditor: false, showCountry: false, empty: "No records in this group." })}
+            </article>
+        `).join("")}</div>`
+        : `<div class="empty">No same file/location conflicts found in the current US/territory contact list.</div>`;
+}
+
 
 const infoContent = {
     analysis: {
@@ -1709,12 +2027,22 @@ const infoContent = {
         `
     },
     discrepancies: {
-        title: "PSN Discrepancy Set Formulas",
+        title: "Reference Comparison Formulas",
         body: `
-            <p>Let T be tracker Yes PSNs, C be all contact-list PSNs, and U be United States contact-list PSNs.</p>
-            <code class="formula">Missing from contact list = T - C</code>
-            <code class="formula">Found but not US contact = (T intersection C) - U</code>
-            <code class="formula">US contact not tracker Yes = U - T</code>
+            <p>The Customer Contact List is treated as the current reference. Let T be all tracker PSNs, C be all contact-list PSNs, and U be current US/territory contact-list PSNs. Canada is excluded from U.</p>
+            <code class="formula">Tracker missing from current contact list = T - C</code>
+            <code class="formula">Current US/territory contact-list PSNs not in tracker = U - T</code>
+            <p>Displayed results only include tracker rows missing from the current contact list and current US/territory contact rows missing from the tracker. Canada is excluded from the displayed lists and downloads.</p>
+        `
+    },
+    "possible-matches": {
+        title: "Possible Match Logic",
+        body: `
+            <p>For tracker PSNs missing from the current contact list, SigmaSight searches current US/territory contact-list records with different PSNs but similar business identity.</p>
+            <code class="formula">Candidate score = company similarity + city match + state match + address match + file/SCN match + file/state bonus</code>
+            <code class="formula">Company similarity = SequenceMatcher(normalized tracker company, normalized contact company)</code>
+            <code class="formula">Possible match threshold = score >= 60 and either strong company similarity or strong location/file evidence</code>
+            <p>This is designed to surface likely company-name changes, address changes, acquisitions, or PSN reassignment. The second list groups current contact-list rows that share file/location but have different company names and PSNs.</p>
         `
     }
 };
