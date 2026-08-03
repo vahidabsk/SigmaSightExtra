@@ -262,6 +262,16 @@ def find_first_column(df, header_row, candidates):
 
     return None
 
+
+def is_withdrawn_tracker_row(row):
+    for value in row:
+        if pd.isna(value):
+            continue
+        if "withdrawn" in str(value).strip().lower():
+            return True
+    return False
+
+
 def evaluate_contacts(blob):
     if pd.isna(blob) or str(blob).strip() == "":
         return True, ["Missing contact details"]
@@ -367,10 +377,19 @@ def extract_quinsights_yes_psns(tracker_df):
     tracker_psns = set()
     yes_psn_details = {}
     tracker_psn_details = {}
+    withdrawn_tracker_psns = set()
+    withdrawn_yes_psns = set()
 
     for _, row in tracker_df.iloc[header_row + 1:].iterrows():
         psn = normalize_psn(row[psn_col])
         if not psn:
+            continue
+
+        status = clean_text(row[quinsights_col], "").strip().upper()
+        if is_withdrawn_tracker_row(row):
+            withdrawn_tracker_psns.add(psn)
+            if status in YES_VALUES:
+                withdrawn_yes_psns.add(psn)
             continue
 
         tracker_psns.add(psn)
@@ -383,7 +402,6 @@ def extract_quinsights_yes_psns(tracker_df):
             "file": cell_value(row, columns["file"], ""),
             "address": cell_value(row, columns["address"], ""),
         }
-        status = clean_text(row[quinsights_col], "").strip().upper()
 
         if status in YES_VALUES:
             yes_psns.add(psn)
@@ -398,6 +416,8 @@ def extract_quinsights_yes_psns(tracker_df):
     return yes_psns, yes_psn_details, tracker_psn_details, {
         "tracker_psns": len(tracker_psns),
         "quinsights_yes_psns": len(yes_psns),
+        "withdrawn_tracker_psns_excluded": len(withdrawn_tracker_psns),
+        "withdrawn_yes_psns_excluded": len(withdrawn_yes_psns),
     }
 
 
@@ -691,6 +711,8 @@ async def upload(
         tracker_meta = {
             "tracker_psns": None,
             "quinsights_yes_psns": None,
+            "withdrawn_tracker_psns_excluded": None,
+            "withdrawn_yes_psns_excluded": None,
         }
 
     report_date = extract_report_date(df)

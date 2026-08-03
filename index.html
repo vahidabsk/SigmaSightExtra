@@ -1855,7 +1855,7 @@ const infoContent = {
             <p>SigmaSight standardizes the input before calculating any statistics.</p>
             <code class="formula">PSN_clean = trim(PSN); if PSN looks like 12345.0, use 12345</code>
             <code class="formula">Valid US row = Country in {UNITED STATES, USA, US}</code>
-            <code class="formula">Tracker filter = PSN in tracker where QuInsights POC Updated/Reviewed in {YES, Y}</code>
+            <code class="formula">Tracker filter = PSN in tracker where QuInsights POC Updated/Reviewed in {YES, Y} AND row is not Withdrawn</code>
             <ul>
                 <li>Blank, NA, N/A, None, and NaN-style text are treated as missing.</li>
                 <li>Contacts are split into Primary, Secondary, Site Contact, and Oracle sections.</li>
@@ -1943,7 +1943,7 @@ const infoContent = {
         title: "Tracker Yes PSNs Formula",
         body: `
             <p>This metric exists when the audit tracker filter is turned on.</p>
-            <code class="formula">Tracker Yes PSNs = count(unique PSN where QuInsights POC Updated/Reviewed in {YES, Y})</code>
+            <code class="formula">Tracker Yes PSNs = count(unique PSN where QuInsights POC Updated/Reviewed in {YES, Y} AND row is not Withdrawn)</code>
             <p>When the tracker filter is off, this field shows Off because the tracker is not used.</p>
         `
     },
@@ -2029,7 +2029,7 @@ const infoContent = {
     discrepancies: {
         title: "Reference Comparison Formulas",
         body: `
-            <p>The Customer Contact List is treated as the current reference. Let T be all tracker PSNs, C be all contact-list PSNs, and U be current US/territory contact-list PSNs. Canada is excluded from U.</p>
+            <p>The Customer Contact List is treated as the current reference. Let T be all non-withdrawn tracker PSNs, C be all contact-list PSNs, and U be current US/territory contact-list PSNs. Canada is excluded from U.</p>
             <code class="formula">Tracker missing from current contact list = T - C</code>
             <code class="formula">Current US/territory contact-list PSNs not in tracker = U - T</code>
             <p>Displayed results only include tracker rows missing from the current contact list and current US/territory contact rows missing from the tracker. Canada is excluded from the displayed lists and downloads.</p>
