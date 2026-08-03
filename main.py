@@ -720,6 +720,8 @@ async def upload(
     contact_records_by_psn = {record["psn"]: record for record in contact_records}
     contact_reference_records = [record for record in contact_records if is_visible_reference_record(record)]
     contact_reference_records_by_psn = {record["psn"]: record for record in contact_reference_records}
+    contact_reference_psns = set(contact_reference_records_by_psn.keys())
+    analysis_psns = (eligible_psns & contact_reference_psns) if eligible_psns is not None else None
 
     total = 0
     defective_units = 0
@@ -748,7 +750,7 @@ async def upload(
         if psn:
             contact_us_psns.add(psn)
 
-        if eligible_psns is not None and psn not in eligible_psns:
+        if analysis_psns is not None and psn not in analysis_psns:
             continue
 
         matched_psns.add(psn)
@@ -823,6 +825,7 @@ async def upload(
             "use_tracker_filter": use_tracker_filter,
             "contact_us_rows": contact_us_rows,
             "matched_psns": len(matched_psns),
+            "common_tracker_yes_psns": len(analysis_psns or set()),
             "auditors_with_defects": len(latest_auditor_defects),
             "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
             "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),
@@ -857,6 +860,7 @@ async def upload(
         "use_tracker_filter": use_tracker_filter,
         "contact_us_rows": contact_us_rows,
         "matched_psns": len(matched_psns),
+        "common_tracker_yes_psns": len(analysis_psns or set()),
         "auditors_with_defects": len(latest_auditor_defects),
         "tracker_yes_missing_from_contact_list": len(latest_discrepancies["tracker_yes_missing_from_contact_list"]),
         "tracker_yes_found_but_not_us_contact": len(latest_discrepancies["tracker_yes_found_but_not_us_contact"]),

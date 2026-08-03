@@ -847,7 +847,7 @@
             <div class="kpi"><div class="kpi-top"><h3 id="rate"></h3><button type="button" class="formula-button" data-info="percent-defective">Formula</button></div><p>% Defective</p></div>
             <div class="kpi"><div class="kpi-top"><h3 id="dpmo"></h3><button type="button" class="formula-button" data-info="dpmo">Formula</button></div><p>DPMO</p></div>
             <div class="kpi"><div class="kpi-top"><h3 id="sigma"></h3><button type="button" class="formula-button" data-info="sigma-metric">Formula</button></div><p>Sigma</p></div>
-            <div class="kpi"><div class="kpi-top"><h3 id="yesPsns"></h3><button type="button" class="formula-button" data-info="tracker-yes-psns">Formula</button></div><p>Tracker Yes PSNs</p></div>
+            <div class="kpi"><div class="kpi-top"><h3 id="yesPsns"></h3><button type="button" class="formula-button" data-info="tracker-yes-psns">Formula</button></div><p>Common Tracker Yes PSNs</p></div>
             <div class="kpi"><div class="kpi-top"><h3 id="matchedPsns"></h3><button type="button" class="formula-button" data-info="analyzed-psns">Formula</button></div><p>Analyzed PSNs</p></div>
         </div>
     </section>
@@ -1185,7 +1185,7 @@ function renderResults(data) {
     document.getElementById("rate").innerText = rate.toFixed(2) + "%";
     document.getElementById("dpmo").innerText = formatNumber(Math.round(data.dpmo));
     document.getElementById("sigma").innerText = formatSigma(sigma);
-    document.getElementById("yesPsns").innerText = data.use_tracker_filter ? formatNumber(data.quinsights_yes_psns) : "Off";
+    document.getElementById("yesPsns").innerText = data.use_tracker_filter ? formatNumber(data.common_tracker_yes_psns || data.matched_psns) : "Off";
     document.getElementById("matchedPsns").innerText = formatNumber(data.matched_psns);
 
     const reduction = baseline.total_defects
@@ -1199,7 +1199,7 @@ function renderResults(data) {
     const reportDate = data.report_date || "Unknown Report Date";
     document.getElementById("analysisTitle").innerText =
         data.use_tracker_filter
-            ? "Metric Facts (Contact Report Date - " + reportDate + ", filtered by tracker Yes PSNs)"
+            ? "Metric Facts (Contact Report Date - " + reportDate + ", common tracker/contact Yes PSNs only)"
             : "Metric Facts (Contact Report Date - " + reportDate + ", full US contact list)";
 
     setTrackerTabsVisible(data.use_tracker_filter);
@@ -1942,8 +1942,8 @@ const infoContent = {
     "tracker-yes-psns": {
         title: "Tracker Yes PSNs Formula",
         body: `
-            <p>This metric exists when the audit tracker filter is turned on.</p>
-            <code class="formula">Tracker Yes PSNs = count(unique PSN where QuInsights POC Updated/Reviewed in {YES, Y} AND row is not Withdrawn)</code>
+            <p>This metric exists when the audit tracker filter is turned on. It shows only the common PSNs used in the calculation.</p>
+            <code class="formula">Common Tracker Yes PSNs = count(unique PSN where QuInsights in {YES, Y} AND row is not Withdrawn AND PSN exists in current contact list)</code>
             <p>When the tracker filter is off, this field shows Off because the tracker is not used.</p>
         `
     },
@@ -1951,7 +1951,7 @@ const infoContent = {
         title: "Analyzed PSNs Formula",
         body: `
             <p>This is the final count after country and optional tracker filtering.</p>
-            <code class="formula">Tracker ON: Analyzed PSNs = count(US contact PSNs intersect tracker Yes PSNs)</code>
+            <code class="formula">Tracker ON: Analyzed PSNs = count(current contact-list PSNs intersect non-withdrawn tracker Yes PSNs)</code>
             <code class="formula">Tracker OFF: Analyzed PSNs = count(US contact PSNs)</code>
         `
     },
