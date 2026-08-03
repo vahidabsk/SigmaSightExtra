@@ -41,6 +41,7 @@ US_COUNTRIES = {
     "UNITED STATES MINOR OUTLYING ISLANDS",
 }
 YES_VALUES = {"YES", "Y"}
+TRACKER_ASC_STATUS_COL = 29  # Excel column AD
 
 BASELINE = {
     "total": 1630,
@@ -263,13 +264,15 @@ def find_first_column(df, header_row, candidates):
     return None
 
 
-def is_withdrawn_tracker_row(row):
-    for value in row:
-        if pd.isna(value):
-            continue
-        if "withdrawn" in str(value).strip().lower():
-            return True
-    return False
+def is_withdrawn_tracker_row(row, status_col=TRACKER_ASC_STATUS_COL):
+    if status_col >= len(row):
+        return False
+
+    value = row[status_col]
+    if pd.isna(value):
+        return False
+
+    return "withdrawn" in str(value).strip().lower()
 
 
 def evaluate_contacts(blob):
@@ -382,12 +385,16 @@ def extract_quinsights_yes_psns(tracker_df):
 
     for _, row in tracker_df.iloc[header_row + 1:].iterrows():
         psn = normalize_psn(row[psn_col])
+        if psn and is_withdrawn_tracker_row(row):
+            withdrawn_tracker_psns.add(psn)
+
+    for _, row in tracker_df.iloc[header_row + 1:].iterrows():
+        psn = normalize_psn(row[psn_col])
         if not psn:
             continue
 
         status = clean_text(row[quinsights_col], "").strip().upper()
-        if is_withdrawn_tracker_row(row):
-            withdrawn_tracker_psns.add(psn)
+        if psn in withdrawn_tracker_psns:
             if status in YES_VALUES:
                 withdrawn_yes_psns.add(psn)
             continue
@@ -413,7 +420,7 @@ def extract_quinsights_yes_psns(tracker_df):
             detail="No PSNs with QuInsights POC Updated/Reviewed = Yes were found in the audit tracker.",
         )
 
-    return yes_psns, yes_psn_details, tracker_psn_details, {
+    return yes_psns, yes_psn_details, tracker_psn_details, withdrawn_tracker_psns, {
         "tracker_psns": len(tracker_psns),
         "quinsights_yes_psns": len(yes_psns),
         "withdrawn_tracker_psns_excluded": len(withdrawn_tracker_psns),
@@ -703,11 +710,12 @@ async def upload(
         )
 
     if use_tracker_filter:
-        eligible_psns, yes_psn_details, tracker_psn_details, tracker_meta = extract_quinsights_yes_psns(tracker_df)
+        eligible_psns, yes_psn_details, tracker_psn_details, withdrawn_tracker_psns, tracker_meta = extract_quinsights_yes_psns(tracker_df)
     else:
         eligible_psns = None
         yes_psn_details = {}
         tracker_psn_details = {}
+        withdrawn_tracker_psns = set()
         tracker_meta = {
             "tracker_psns": None,
             "quinsights_yes_psns": None,
@@ -790,7 +798,7 @@ async def upload(
     if use_tracker_filter:
         tracker_all_psns = set(tracker_psn_details.keys())
         missing_tracker_psns = tracker_all_psns - contact_all_psns
-        contact_reference_not_tracker_psns = contact_us_psns - tracker_all_psns
+        contact_reference_not_tracker_psns = contact_us_psns - tracker_all_psns - withdrawn_tracker_psns
         latest_discrepancies = {
             "tracker_yes_missing_from_contact_list": tracker_record_list(tracker_psn_details, missing_tracker_psns),
             "tracker_yes_found_but_not_us_contact": [],

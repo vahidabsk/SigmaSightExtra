@@ -9,7 +9,7 @@ With the audit tracker filter on, it accepts two Excel files:
 - Audit tracker
 - Customer contact list
 
-The audit tracker is used first as a filter. SigmaSightExtra only analyzes common PSNs that exist in both files, where `QuInsights POC Updated/Reviewed` is marked `Yes` and the tracker row is not marked `Withdrawn`. Tracker-only and contact-list-only differences are reported separately, but they are not included in the metric calculations.
+The audit tracker is used first as a filter. SigmaSightExtra only analyzes common PSNs that exist in both files, where `QuInsights POC Updated/Reviewed` is marked `Yes` and the tracker Column AD (`ASC Status`) is not marked `Withdrawn`. Tracker-only and contact-list-only differences are reported separately, but they are not included in the metric calculations.
 
 With the audit tracker filter off, it accepts only the customer contact list and analyzes all US contact-list rows.
 
@@ -43,7 +43,7 @@ The audit tracker must include:
 | --- | --- |
 | PSN | PSN to match against the contact list |
 | QuInsights POC Updated/Reviewed | Only rows marked `Yes` are analyzed |
-| Withdrawn status/text | Rows containing `Withdrawn` are excluded before analysis and tracker comparison |
+| Withdrawn status/text | Rows with `Withdrawn` in Column AD (`ASC Status`) are excluded before analysis, discrepancies, possible matches, and exports |
 | Calculation population | Only PSNs common to the tracker Yes population and the current contact list are calculated |
 
 The contact-details field is checked for sections such as:
