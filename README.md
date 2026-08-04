@@ -9,7 +9,7 @@ With the audit tracker filter on, it accepts two Excel files:
 - Audit tracker
 - Customer contact list
 
-The audit tracker is used first as a filter. SigmaSightExtra only analyzes common PSNs that exist in both files, where `QuInsights POC Updated/Reviewed` is marked `Yes` and the tracker Column AD (`ASC Status`) is not marked `Withdrawn`. Tracker-only and contact-list-only differences are reported separately, but they are not included in the metric calculations.
+The audit tracker is used first as a filter. SigmaSightExtra only analyzes common PSNs that exist in both files, where `QuInsights POC Updated/Reviewed` is marked `Yes` and the tracker Column AD (`ASC Status`) is not marked `Withdrawn`. Tracker-only, contact-list-only, and withdrawn PSNs are excluded from the calculation and from the displayed discrepancy outputs.
 
 With the audit tracker filter off, it accepts only the customer contact list and analyzes all US contact-list rows.
 
@@ -22,7 +22,7 @@ With the audit tracker filter off, it accepts only the customer contact list and
 - Defective PSNs by state
 - Top 10 companies by defective PSNs
 - Defective PSNs by assigned auditor
-- PSN discrepancies between the tracker and contact list
+- Common non-withdrawn tracker/contact PSN analysis
 - Possible alternate PSN matches for tracker rows missing from the contact list
 
 ## Expected Excel Layout
@@ -44,7 +44,7 @@ The audit tracker must include:
 | PSN | PSN to match against the contact list |
 | QuInsights POC Updated/Reviewed | Only rows marked `Yes` are analyzed |
 | Withdrawn status/text | Rows with `Withdrawn` in Column AD (`ASC Status`) are excluded before analysis, discrepancies, possible matches, and exports |
-| Calculation population | Only PSNs common to the tracker Yes population and the current contact list are calculated |
+| Calculation population | Only PSNs common to the non-withdrawn tracker Yes population and the current contact list are calculated or displayed |
 
 The contact-details field is checked for sections such as:
 

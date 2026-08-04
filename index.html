@@ -2029,10 +2029,10 @@ const infoContent = {
     discrepancies: {
         title: "Reference Comparison Formulas",
         body: `
-            <p>The Customer Contact List is treated as the current reference. Let T be all tracker PSNs whose Column AD ASC Status is not Withdrawn, C be all contact-list PSNs, and U be current US/territory contact-list PSNs. Canada is excluded from U.</p>
-            <code class="formula">Tracker missing from current contact list = T - C</code>
-            <code class="formula">Current US/territory contact-list PSNs not in tracker = U - T</code>
-            <p>Displayed results only include tracker rows missing from the current contact list and current US/territory contact rows missing from the tracker. Canada is excluded from the displayed lists and downloads.</p>
+            <p>SigmaSight treats the common non-withdrawn PSN set as the only eligible population. Let T be tracker Yes PSNs whose Column AD ASC Status is not Withdrawn, and U be current US/territory contact-list PSNs. Canada is excluded from U.</p>
+            <code class="formula">Eligible PSNs = T intersect U</code>
+            <code class="formula">Excluded PSNs = (T - U) union (U - T) union Withdrawn</code>
+            <p>Excluded PSNs are not used in metric calculations and are not displayed in discrepancy outputs or downloads.</p>
         `
     },
     "possible-matches": {

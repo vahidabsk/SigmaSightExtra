@@ -796,15 +796,17 @@ async def upload(
     latest_state_details = dict(state_details)
     latest_auditor_defects = build_auditor_defects(auditor_defect_map)
     if use_tracker_filter:
-        tracker_all_psns = set(tracker_psn_details.keys())
-        missing_tracker_psns = tracker_all_psns - contact_all_psns
-        contact_reference_not_tracker_psns = contact_us_psns - tracker_all_psns - withdrawn_tracker_psns
+        # Only common, non-withdrawn tracker/contact PSNs are eligible for output.
+        # Tracker-only, contact-only, and withdrawn PSNs are excluded from displayed discrepancies.
         latest_discrepancies = {
-            "tracker_yes_missing_from_contact_list": tracker_record_list(tracker_psn_details, missing_tracker_psns),
+            "tracker_yes_missing_from_contact_list": [],
             "tracker_yes_found_but_not_us_contact": [],
-            "contact_us_not_tracker_yes": record_list(contact_reference_records_by_psn, contact_reference_not_tracker_psns),
+            "contact_us_not_tracker_yes": [],
         }
-        latest_possible_matches = build_possible_matches(tracker_psn_details, contact_reference_records, missing_tracker_psns)
+        latest_possible_matches = {
+            "missing_tracker_psn_possible_contact_matches": [],
+            "same_file_location_different_company_psn": [],
+        }
     else:
         latest_discrepancies = {
             "tracker_yes_missing_from_contact_list": [],
