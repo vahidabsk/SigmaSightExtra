@@ -2,6 +2,8 @@
 
 SigmaSightExtra is a FastAPI dashboard for Six Sigma contact-data quality analysis.
 
+This package is offline-ready: Chart.js, the US map, and all dashboard assets are included locally. The desktop executable runs a local server on `127.0.0.1`; it does not need Render or internet access after the one-time package/build is complete.
+
 It can run in two modes.
 
 With the audit tracker filter on, it accepts two Excel files:
@@ -24,6 +26,32 @@ With the audit tracker filter off, it accepts only the customer contact list and
 - Defective PSNs by assigned auditor
 - Common non-withdrawn tracker/contact PSN analysis
 - Possible alternate PSN matches for tracker rows missing from the contact list
+
+
+## Email-Ready Portable Windows Package
+
+The host PC does not need Python, pip, packages, Render, or internet access. Build the portable zip one time, then email the zip.
+
+Recommended method using GitHub:
+
+1. Push this repo to GitHub.
+2. Open the GitHub repo in your browser.
+3. Go to `Actions`.
+4. Run `Build portable Windows app`, or let it run automatically after push.
+5. Download the artifact named `SigmaSightExtraPortable`.
+6. Email `SigmaSightExtraPortable.zip` to the host PC.
+7. On the host PC, extract the zip and double-click `SigmaSightExtra.exe`.
+
+The portable zip includes the Python runtime, required Python packages, local Chart.js, the local US map, and all SigmaSightExtra files. It opens the dashboard in the host PC's normal browser and keeps a small control window open while the local app is running.
+
+Alternative method using your own Windows build computer:
+
+1. Install Python on the build computer only.
+2. Extract this source folder to a short path like `C:\SigmaSightExtra`.
+3. Double-click `build_windows.bat`.
+4. Email `dist\SigmaSightExtraPortable.zip`.
+
+The recipient/host computer only runs the `.exe`; it does not install anything.
 
 ## Expected Excel Layout
 

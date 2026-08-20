@@ -1,0 +1,58 @@
+name: Build portable Windows app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - main.py
+      - portable_launcher.py
+      - index.html
+      - defects.html
+      - us.svg
+      - vendor/**
+      - requirements.txt
+      - requirements-desktop.txt
+      - build_windows.bat
+      - .github/workflows/build-portable-windows.yml
+
+jobs:
+  build-portable-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-desktop.txt
+
+      - name: Build portable app
+        run: |
+          python -m PyInstaller `
+            --noconfirm `
+            --clean `
+            --windowed `
+            --onedir `
+            --name SigmaSightExtra `
+            --add-data "index.html;." `
+            --add-data "defects.html;." `
+            --add-data "us.svg;." `
+            --add-data "vendor;vendor" `
+            portable_launcher.py
+          Rename-Item -Path dist\SigmaSightExtra -NewName SigmaSightExtraPortable
+          Copy-Item PORTABLE_README.txt dist\SigmaSightExtraPortable\README.txt
+          Compress-Archive -Path dist\SigmaSightExtraPortable\* -DestinationPath dist\SigmaSightExtraPortable.zip -Force
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: SigmaSightExtraPortable
+          path: dist/SigmaSightExtraPortable/**
