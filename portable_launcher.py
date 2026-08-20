@@ -57,7 +57,7 @@ class ServerThread(threading.Thread):
                 app,
                 host="127.0.0.1",
                 port=self.port,
-                log_level="warning",
+                log_config=None,
                 access_log=False,
             )
             self.server = LocalServer(config)
