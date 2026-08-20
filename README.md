@@ -51,7 +51,7 @@ Alternative method using your own Windows build computer:
 3. Double-click `build_windows.bat`.
 4. Email `dist\SigmaSightExtraPortable.zip`.
 
-The recipient/host computer only runs the `.exe`; it does not install anything.
+The recipient/host computer only runs the `.exe`; it does not install anything. If startup fails, `SigmaSightExtra-startup.log` is created beside the EXE with the exact error.
 
 ## Expected Excel Layout
 

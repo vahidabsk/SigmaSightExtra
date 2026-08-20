@@ -41,6 +41,15 @@ jobs:
             --clean `
             --windowed `
             --onedir `
+            --collect-all pandas `
+            --collect-all openpyxl `
+            --collect-all numpy `
+            --collect-submodules fastapi `
+            --collect-submodules starlette `
+            --collect-submodules pydantic `
+            --collect-submodules uvicorn `
+            --collect-submodules multipart `
+            --collect-submodules python_multipart `
             --name SigmaSightExtra `
             --add-data "index.html;." `
             --add-data "defects.html;." `

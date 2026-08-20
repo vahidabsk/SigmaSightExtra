@@ -19,3 +19,5 @@ Internet is not required after the portable package is built.
 The app opens the host PC's normal browser and runs only on 127.0.0.1 on the same computer. Keep the small SigmaSightExtra Portable window open while using the dashboard.
 
 If Windows SmartScreen appears, choose More info, then Run anyway, if you trust this file.
+
+If the app cannot start, look for SigmaSightExtra-startup.log in the same folder as SigmaSightExtra.exe and send that file for troubleshooting.
