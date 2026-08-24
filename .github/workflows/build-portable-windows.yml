@@ -6,14 +6,15 @@ on:
     branches: [main]
     paths:
       - main.py
-      - portable_launcher.py
+      - portable_server.py
+      - Start SigmaSightExtra.cmd
       - index.html
+      - control.html
       - defects.html
       - us.svg
       - vendor/**
       - requirements.txt
-      - requirements-desktop.txt
-      - build_windows.bat
+      - PORTABLE_README.txt
       - .github/workflows/build-portable-windows.yml
 
 jobs:
@@ -24,44 +25,51 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up build Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          architecture: 'x64'
 
-      - name: Install build dependencies
+      - name: Assemble portable folder with embedded Python
+        shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $portable = 'dist\SigmaSightExtraPortable'
+          $pythonDir = Join-Path $portable 'python'
+          New-Item -ItemType Directory -Force -Path $pythonDir | Out-Null
+
+          $version = '3.12.5'
+          $embedUrl = "https://www.python.org/ftp/python/$version/python-$version-embed-amd64.zip"
+          Invoke-WebRequest -Uri $embedUrl -OutFile python-embed.zip
+          Expand-Archive -Path python-embed.zip -DestinationPath $pythonDir -Force
+
+          $pth = Get-ChildItem $pythonDir -Filter 'python*._pth' | Select-Object -First 1
+          $pthText = Get-Content $pth.FullName
+          $pthText = $pthText | ForEach-Object { $_ -replace '#import site', 'import site' }
+          if ($pthText -notcontains 'Lib\site-packages') {
+            $pthText += 'Lib\site-packages'
+          }
+          Set-Content -Path $pth.FullName -Value $pthText -Encoding ASCII
+
+          New-Item -ItemType Directory -Force -Path "$pythonDir\Lib\site-packages" | Out-Null
           python -m pip install --upgrade pip
-          python -m pip install -r requirements-desktop.txt
+          python -m pip install --target "$pythonDir\Lib\site-packages" -r requirements.txt
 
-      - name: Build portable app
-        run: |
-          python -m PyInstaller `
-            --noconfirm `
-            --clean `
-            --windowed `
-            --onedir `
-            --collect-all pandas `
-            --collect-all openpyxl `
-            --collect-all numpy `
-            --collect-submodules fastapi `
-            --collect-submodules starlette `
-            --collect-submodules pydantic `
-            --collect-submodules uvicorn `
-            --collect-submodules multipart `
-            --collect-submodules python_multipart `
-            --name SigmaSightExtra `
-            --add-data "index.html;." `
-            --add-data "defects.html;." `
-            --add-data "us.svg;." `
-            --add-data "vendor;vendor" `
-            portable_launcher.py
-          Rename-Item -Path dist\SigmaSightExtra -NewName SigmaSightExtraPortable
-          Copy-Item PORTABLE_README.txt dist\SigmaSightExtraPortable\README.txt
-          Compress-Archive -Path dist\SigmaSightExtraPortable\* -DestinationPath dist\SigmaSightExtraPortable.zip -Force
+          Copy-Item main.py $portable
+          Copy-Item portable_server.py $portable
+          Copy-Item 'Start SigmaSightExtra.cmd' $portable
+          Copy-Item index.html $portable
+          if (Test-Path control.html) { Copy-Item control.html $portable }
+          Copy-Item defects.html $portable
+          Copy-Item us.svg $portable
+          Copy-Item vendor $portable -Recurse
+          Copy-Item PORTABLE_README.txt "$portable\README.txt"
 
-      - name: Upload portable zip
+          Compress-Archive -Path "$portable\*" -DestinationPath 'dist\SigmaSightExtraPortable.zip' -Force
+
+      - name: Upload portable package
         uses: actions/upload-artifact@v4
         with:
           name: SigmaSightExtraPortable
-          path: dist/SigmaSightExtraPortable/**
+          path: dist/SigmaSightExtraPortable

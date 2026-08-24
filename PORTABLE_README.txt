@@ -1,23 +1,19 @@
-SigmaSightExtra Portable
-========================
+SigmaSightExtra Portable - No Install
+====================================
 
-Run this app without installing Python or Python packages on the target Windows laptop.
+This package is for the destination/host Windows computer.
 
-How to use the portable package:
-1. Open the SigmaSightExtraPortable folder.
-2. Double-click SigmaSightExtra.exe.
-3. Upload the tracker and customer contact Excel files.
+Do not run build_windows.bat on the host computer.
+The host computer does not need Python installed.
+The host computer does not need internet access.
 
-This portable app includes:
-- SigmaSightExtra.exe
-- Python runtime and required Python packages bundled by PyInstaller
-- local Chart.js file
-- local US map SVG
-- dashboard HTML files
+How to run:
+1. Extract SigmaSightExtraPortable.zip.
+2. Open the extracted SigmaSightExtraPortable folder.
+3. Double-click Start SigmaSightExtra.cmd.
+4. Keep the command window open while using the dashboard.
+5. Your browser will open the local offline dashboard.
 
-Internet is not required after the portable package is built.
-The app opens the host PC's normal browser and runs only on 127.0.0.1 on the same computer. Keep the small SigmaSightExtra Portable window open while using the dashboard.
+This package includes its own embedded Python runtime, required Python packages, local Chart.js, the local US map, and all SigmaSightExtra app files.
 
-If Windows SmartScreen appears, choose More info, then Run anyway, if you trust this file.
-
-If the app cannot start, look for SigmaSightExtra-startup.log in the same folder as SigmaSightExtra.exe and send that file for troubleshooting.
+If the app cannot start, send SigmaSightExtra-startup.log from this folder for troubleshooting.

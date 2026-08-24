@@ -30,28 +30,23 @@ With the audit tracker filter off, it accepts only the customer contact list and
 
 ## Email-Ready Portable Windows Package
 
-The host PC does not need Python, pip, packages, Render, or internet access. Build the portable zip one time, then email the zip.
+Use the GitHub Actions artifact for coworkers. Do not send the source folder and do not ask the coworker to run `build_windows.bat`.
 
-Recommended method using GitHub:
+The final host-PC package is `SigmaSightExtraPortable.zip`. It contains an embedded Python runtime and all dependencies. The destination computer does not need Python, pip, package installs, Render, or internet access.
+
+Recommended process:
 
 1. Push this repo to GitHub.
 2. Open the GitHub repo in your browser.
 3. Go to `Actions`.
-4. Run `Build portable Windows app`, or let it run automatically after push.
+4. Run `Build portable Windows app`, or open the latest successful run.
 5. Download the artifact named `SigmaSightExtraPortable`.
-6. Email `SigmaSightExtraPortable.zip` to the host PC.
-7. On the host PC, extract the zip and double-click `SigmaSightExtra.exe`.
+6. Email `SigmaSightExtraPortable.zip` to the coworker.
+7. The coworker extracts the zip and double-clicks `Start SigmaSightExtra.cmd`.
 
-The portable zip includes the Python runtime, required Python packages, local Chart.js, the local US map, and all SigmaSightExtra files. It opens the dashboard in the host PC's normal browser and keeps a small control window open while the local app is running.
+The package does not use PyInstaller, so it avoids the unsigned generated EXE that Windows Defender was blocking. It runs using the included official embedded Python runtime.
 
-Alternative method using your own Windows build computer:
-
-1. Install Python on the build computer only.
-2. Extract this source folder to a short path like `C:\SigmaSightExtra`.
-3. Double-click `build_windows.bat`.
-4. Email `dist\SigmaSightExtraPortable.zip`.
-
-The recipient/host computer only runs the `.exe`; it does not install anything. If startup fails, `SigmaSightExtra-startup.log` is created beside the EXE with the exact error.
+If startup fails, `SigmaSightExtra-startup.log` is created in the same folder with the exact error.
 
 ## Expected Excel Layout
 
