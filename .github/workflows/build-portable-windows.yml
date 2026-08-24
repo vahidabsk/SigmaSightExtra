@@ -47,6 +47,9 @@ jobs:
           $pth = Get-ChildItem $pythonDir -Filter 'python*._pth' | Select-Object -First 1
           $pthText = Get-Content $pth.FullName
           $pthText = $pthText | ForEach-Object { $_ -replace '#import site', 'import site' }
+          if ($pthText -notcontains '..') {
+            $pthText += '..'
+          }
           if ($pthText -notcontains 'Lib\site-packages') {
             $pthText += 'Lib\site-packages'
           }

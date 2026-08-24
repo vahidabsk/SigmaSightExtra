@@ -7,11 +7,14 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
+APP_DIR = Path(__file__).resolve().parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+
 import uvicorn
 
 from main import app, BASE_DIR
 
-APP_DIR = Path(__file__).resolve().parent
 LOG_PATH = APP_DIR / "SigmaSightExtra-startup.log"
 
 
