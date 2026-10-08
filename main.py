@@ -485,6 +485,7 @@ def find_contact_columns(df):
                 "city": find_first_column(df, row_index, ["City"]),
                 "state": find_first_column(df, row_index, ["State/Province", "State"]),
                 "country": find_first_column(df, row_index, ["Country"]),
+                "contacts": find_first_column(df, row_index, ["Contacts", "Contact Details", "Contact Information"]),
                 "file": find_first_column(df, row_index, ["File", "File Number", "File #", "SCN"]),
             }
 
@@ -496,6 +497,7 @@ def find_contact_columns(df):
         "city": COL_CITY,
         "state": COL_STATE,
         "country": COL_COUNTRY,
+        "contacts": COL_CONTACTS,
         "file": None,
     }
 
@@ -510,8 +512,8 @@ def cell_value(row, col_index, fallback=""):
         return fallback
 
 
-def build_contact_records(df):
-    columns = find_contact_columns(df)
+def build_contact_records(df, columns=None):
+    columns = columns or find_contact_columns(df)
     records = []
 
     for _, row in df.iloc[columns["header_row"] + 1:].iterrows():
@@ -767,7 +769,8 @@ async def upload(
         }
 
     report_date = extract_report_date(df)
-    contact_records = build_contact_records(df)
+    contact_columns = find_contact_columns(df)
+    contact_records = build_contact_records(df, contact_columns)
     contact_records_by_psn = {record["psn"]: record for record in contact_records}
     contact_reference_records = [record for record in contact_records if is_visible_reference_record(record)]
     contact_reference_records_by_psn = {record["psn"]: record for record in contact_reference_records}
@@ -787,13 +790,15 @@ async def upload(
     defect_type_map = defaultdict(int)
     auditor_defect_map = defaultdict(list)
 
-    for _, row in df.iloc[1:].iterrows():
-        psn = normalize_psn(row[COL_PSN])
+    for _, row in df.iloc[contact_columns["header_row"] + 1:].iterrows():
+        psn = normalize_psn(cell_value(row, contact_columns["psn"], ""))
         if psn:
             contact_all_psns.add(psn)
+        else:
+            continue
 
-        country = row[COL_COUNTRY]
-        row_state = row[COL_STATE]
+        country = cell_value(row, contact_columns["country"], "Unknown")
+        row_state = cell_value(row, contact_columns["state"], "Unknown")
 
         if not is_us_reference_location(country, row_state):
             continue
@@ -813,14 +818,14 @@ async def upload(
         matched_psns.add(psn)
         total += 1
 
-        state = clean_state(row[COL_STATE])
+        state = clean_state(row_state)
 
-        raw_company = row[COL_COMPANY]
+        raw_company = cell_value(row, contact_columns["company"], "Unknown")
         company = normalize_company(raw_company)
         asc_name = clean_text(raw_company)
-        city = clean_text(row[COL_CITY])
+        city = cell_value(row, contact_columns["city"], "Unknown")
 
-        blob = row[COL_CONTACTS]
+        blob = cell_value(row, contact_columns["contacts"], "")
 
         is_defect, defect_reasons = evaluate_contacts(blob)
 

@@ -50,15 +50,16 @@ If startup fails, `SigmaSightExtra-startup.log` is created in the same folder wi
 
 ## Expected Excel Layout
 
-The customer contact list expects these columns:
+The customer contact list identifies these fields by their header names, so extra inserted columns such as `CCN` are ignored and do not shift the calculation:
 
-| Column | Meaning |
+| Header | Meaning |
 | --- | --- |
-| A | PSN |
-| B | Company |
-| E | State |
-| F | Country |
-| I | Contact details |
+| PSN | Party site number |
+| Company Name | Company |
+| City | City |
+| State/Province | State or territory |
+| Country | Country |
+| Contacts | Contact details |
 
 The audit tracker must include:
 
