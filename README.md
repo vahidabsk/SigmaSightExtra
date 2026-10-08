@@ -79,6 +79,7 @@ Oracle - Name, Phone, Email
 ```
 
 A PSN is counted as defective when the contact field is empty or when no contact section has a valid name, phone, and email.
+Each PSN is counted only once. Duplicate customer-contact rows do not increase the total, defect count, or auditor defect count, and do not repeat the PSN in dashboard outputs.
 
 ## Run Locally
 

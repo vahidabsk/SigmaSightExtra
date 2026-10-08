@@ -694,10 +694,11 @@ def build_auditor_defects(auditor_map):
     rows = []
 
     for auditor, psns in auditor_map.items():
+        unique_psns = sorted(set(psns), key=str)
         rows.append({
             "auditor": auditor,
-            "count": len(psns),
-            "psns": sorted(psns, key=str),
+            "count": len(unique_psns),
+            "psns": unique_psns,
         })
 
     return sorted(rows, key=lambda item: (-item["count"], item["auditor"]))
@@ -802,6 +803,11 @@ async def upload(
             contact_us_psns.add(psn)
 
         if analysis_psns is not None and psn not in analysis_psns:
+            continue
+
+        # A PSN is one analysis unit. Contact exports can contain duplicate rows,
+        # but those rows must not inflate totals or repeat a PSN in any output.
+        if psn in matched_psns:
             continue
 
         matched_psns.add(psn)
