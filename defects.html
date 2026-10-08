@@ -372,12 +372,12 @@ async function load() {
 
     if (!counts.length) {
         emptyState.style.display = "block";
-        tableSummary.textContent = "0 states";
+        tableSummary.textContent = "0 states/territories";
         return;
     }
 
     emptyState.style.display = "none";
-    tableSummary.textContent = `${Object.keys(data).length} states | ${counts.reduce((sum, count) => sum + count, 0)} PSNs`;
+    tableSummary.textContent = `${Object.keys(data).length} states/territories | ${counts.reduce((sum, count) => sum + count, 0)} PSNs`;
 
     const min = Math.min(...counts);
     const max = Math.max(...counts);

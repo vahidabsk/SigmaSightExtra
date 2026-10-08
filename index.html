@@ -923,7 +923,7 @@
                 <div class="chart-heading">
                     <h3>Defective PSNs Heatmap</h3>
                     <div class="heading-actions">
-                        <span>US states colored by defect count</span>
+                        <span>U.S. states and territories colored by defect count</span>
                         <button type="button" class="formula-button" data-info="heatmap">Formula</button>
                     </div>
                 </div>
@@ -1672,7 +1672,7 @@ function renderDefectTable(data) {
     const counts = Object.values(data).map(items => items.length);
     const total = counts.reduce((sum, count) => sum + count, 0);
 
-    tableSummary.textContent = `${Object.keys(data).length} states | ${total} PSNs`;
+    tableSummary.textContent = `${Object.keys(data).length} states/territories | ${total} PSNs`;
     table.innerHTML = "";
 
     Object.keys(data)

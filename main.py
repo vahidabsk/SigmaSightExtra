@@ -25,18 +25,31 @@ COL_STATE = 4
 COL_COUNTRY = 5
 COL_CONTACTS = 8
 
-US_COUNTRIES = {
+US_COUNTRY_TOKENS = {
     "UNITED STATES",
     "UNITED STATES OF AMERICA",
     "USA",
+    "U S A",
     "US",
-    "U.S.",
+    "U S",
+}
+US_TERRITORY_TOKENS = {
+    "PR",
     "PUERTO RICO",
+    "COMMONWEALTH OF PUERTO RICO",
+    "GU",
     "GUAM",
+    "AS",
     "AMERICAN SAMOA",
+    "MP",
     "NORTHERN MARIANA ISLANDS",
+    "COMMONWEALTH OF THE NORTHERN MARIANA ISLANDS",
+    "CNMI",
+    "VI",
     "U.S. VIRGIN ISLANDS",
     "US VIRGIN ISLANDS",
+    "UNITED STATES VIRGIN ISLANDS",
+    "VIRGIN ISLANDS",
     "VIRGIN ISLANDS, U.S.",
     "UNITED STATES MINOR OUTLYING ISLANDS",
 }
@@ -209,12 +222,40 @@ def normalize_key(value):
     return re.sub(r'[^a-z0-9]', '', text.lower())
 
 
+def normalize_location_token(value):
+    text = clean_text(value, "").upper()
+    return re.sub(r"[^A-Z0-9]+", " ", text).strip()
+
+
 def is_us_reference_country(value):
-    return clean_text(value, "").strip().upper() in US_COUNTRIES
+    """Return True for the United States and its five inhabited territories."""
+    token = normalize_location_token(value)
+    return token in US_COUNTRY_TOKENS or token in {
+        normalize_location_token(territory) for territory in US_TERRITORY_TOKENS
+    }
+
+
+def is_us_reference_location(country, state=""):
+    """Recognize U.S. territories whether supplied as Country or State/Province."""
+    if is_us_reference_country(country):
+        return True
+
+    country_token = normalize_location_token(country)
+    state_token = normalize_location_token(state)
+    territory_tokens = {
+        normalize_location_token(territory) for territory in US_TERRITORY_TOKENS
+    }
+
+    # Some exports leave Country empty and put PR/GU/VI/AS/MP in State/Province.
+    missing_country = country_token in {"", "UNKNOWN", "N A", "NA", "NONE"}
+    return missing_country and state_token in territory_tokens
 
 
 def is_visible_reference_record(record):
-    if not is_us_reference_country(record.get("country", "")):
+    if not is_us_reference_location(
+        record.get("country", ""),
+        record.get("state", ""),
+    ):
         return False
 
     searchable = " ".join([
@@ -479,16 +520,17 @@ def build_contact_records(df):
             continue
 
         country = cell_value(row, columns["country"], "Unknown")
+        state = cell_value(row, columns["state"], "Unknown")
 
         records.append({
             "psn": psn,
             "company": cell_value(row, columns["company"], "Unknown"),
             "address": cell_value(row, columns["address"], ""),
             "city": cell_value(row, columns["city"], "Unknown"),
-            "state": cell_value(row, columns["state"], "Unknown"),
+            "state": state,
             "country": country,
             "file": cell_value(row, columns["file"], ""),
-            "is_us_reference": is_us_reference_country(country),
+            "is_us_reference": is_us_reference_location(country, state),
         })
 
     return records
@@ -749,9 +791,10 @@ async def upload(
         if psn:
             contact_all_psns.add(psn)
 
-        country = str(row[COL_COUNTRY]).strip().upper()
+        country = row[COL_COUNTRY]
+        row_state = row[COL_STATE]
 
-        if not is_us_reference_country(country):
+        if not is_us_reference_location(country, row_state):
             continue
 
         contact_us_rows += 1

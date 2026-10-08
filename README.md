@@ -13,7 +13,7 @@ With the audit tracker filter on, it accepts two Excel files:
 
 The audit tracker is used first as a filter. SigmaSightExtra only analyzes common PSNs that exist in both files, where `QuInsights POC Updated/Reviewed` is marked `Yes` and the tracker Column AD (`ASC Status`) is not marked `Withdrawn`. Tracker-only, contact-list-only, and withdrawn PSNs are excluded from the calculation and from the displayed discrepancy outputs.
 
-With the audit tracker filter off, it accepts only the customer contact list and analyzes all US contact-list rows.
+With the audit tracker filter off, it accepts only the customer contact list and analyzes all U.S. contact-list rows, including Puerto Rico, Guam, the U.S. Virgin Islands, American Samoa, and the Northern Mariana Islands.
 
 - Total units
 - Defective units
@@ -21,7 +21,7 @@ With the audit tracker filter off, it accepts only the customer contact list and
 - Percent defective
 - DPMO
 - Sigma level
-- Defective PSNs by state
+- Defective PSNs by state or territory
 - Top 10 companies by defective PSNs
 - Defective PSNs by assigned auditor
 - Common non-withdrawn tracker/contact PSN analysis
